@@ -144,6 +144,32 @@ func (ff *feedFollower) getFeedUrl(siteUrl *url.URL, doc *goquery.Document) stri
 	return res
 }
 
+// probeFeedUrls tries common feed URL patterns when
+// autodiscovery fails. Returns the first URL that parses
+// as a valid RSS/Atom feed, or empty string if none work.
+func (ff *feedFollower) probeFeedUrls(siteUrl *url.URL) string {
+	suffixes := []string{
+		"/feed",
+		"/feed.xml",
+		"/rss",
+		"/rss.xml",
+		"/atom.xml",
+		"/feed.atom",
+		"/index.xml",
+	}
+	base := strings.TrimRight(siteUrl.String(), "/")
+	for _, suffix := range suffixes {
+		candidate := base + suffix
+		ff.logger.Infof("Probing feed URL: %s", candidate)
+		_, err := ff.fetchParseFeed(candidate)
+		if err == nil {
+			ff.logger.Infof("Found feed at: %s", candidate)
+			return candidate
+		}
+	}
+	return ""
+}
+
 func (ff *feedFollower) trimQueryParams(feedUrl *url.URL) {
 	// The few exceptions where we keep the query param
 	// #33: Youtube feeds look like this: https://www.youtube.com/feeds/videos.xml?channel_id=UCfZz8F37oSJ2rtcEJHM2kCg
@@ -277,6 +303,10 @@ func (ff *feedFollower) getSiteInfo(urlStr string) (*SiteInfo, *gofeed.Feed, err
 
 	// Pick out the data we're interested in
 	res.FeedUrl = ff.getFeedUrl(siteUrl, doc)
+	if res.FeedUrl == "" {
+		// Autodiscovery failed. Try common feed URL patterns.
+		res.FeedUrl = ff.probeFeedUrls(siteUrl)
+	}
 	if res.FeedUrl == "" {
 		ff.logger.Warnf("No feed URL found: %s", siteUrl)
 		return nil, nil, fmt.Errorf("no feed URL found at %s", siteUrl)
