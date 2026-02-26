@@ -57,8 +57,14 @@ func (chk *httpSigChecker) Check(actor string, w http.ResponseWriter, r *http.Re
 	block, _ := pem.Decode([]byte(pubKeyStr))
 
 	var pubKey interface{}
-	if pubKey, err = x509.ParsePKIXPublicKey(block.Bytes); err != nil {
-		return nil, fmt.Sprintf("Failed to parse sender's public key: %v", err), nil
+	pubKey, err = x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		// GoToSocial serves PKCS#1 (BEGIN RSA PUBLIC KEY)
+		// instead of SPKI (BEGIN PUBLIC KEY). Try both.
+		pubKey, err = x509.ParsePKCS1PublicKey(block.Bytes)
+		if err != nil {
+			return nil, fmt.Sprintf("Failed to parse sender's public key: %v", err), nil
+		}
 	}
 
 	if err = verifier.Verify(pubKey, httpsig.RSA_SHA256); err != nil {

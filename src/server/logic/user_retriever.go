@@ -50,7 +50,8 @@ func (ur *userRetriever) Retrieve(userUrl string) (info *dto.UserInfo, err error
 	signer, _, err := httpsig.NewSigner(
 		[]httpsig.Algorithm{httpsig.RSA_SHA256},
 		httpsig.DigestSha256,
-		[]string{httpsig.RequestTarget, "Host", "date", "digest"},
+		// GoToSocial rejects GET signatures that include digest.
+		[]string{httpsig.RequestTarget, "Host", "date"},
 		httpsig.Signature,
 		0)
 	if err != nil {
