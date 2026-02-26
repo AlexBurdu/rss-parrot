@@ -175,6 +175,21 @@ func (ib *inbox) HandleFollow(
 		return
 	}
 
+	// Restrict follows to allowed hosts only.
+	if len(ib.cfg.AllowedHosts) > 0 {
+		allowed := false
+		for _, h := range ib.cfg.AllowedHosts {
+			if actorHostName == h {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			ib.logger.Infof("Rejecting follow from %s: not in allowed_hosts", actorHostName)
+			return
+		}
+	}
+
 	flwr := dal.FollowerInfo{
 		RequestId:     actFollow.Id,
 		ApproveStatus: 0,
@@ -313,6 +328,26 @@ func (ib *inbox) HandleCreateNote(
 
 	reqProblem = ""
 	err = nil
+
+	// Restrict mentions to allowed hosts only.
+	if len(ib.cfg.AllowedHosts) > 0 {
+		actorUrl, parseErr := url.Parse(actBase.Actor)
+		if parseErr != nil {
+			reqProblem = "Cannot parse actor URL"
+			return
+		}
+		allowed := false
+		for _, h := range ib.cfg.AllowedHosts {
+			if actorUrl.Host == h {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			ib.logger.Infof("Rejecting mention from %s: not in allowed_hosts", actorUrl.Host)
+			return
+		}
+	}
 
 	// Parse activity with Note object
 	var act dto.ActivityIn[dto.Note]

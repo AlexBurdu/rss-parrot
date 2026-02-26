@@ -32,6 +32,7 @@ type Config struct {
 	PurgeWaitSec       int            `json:"purge_wait_sec"`
 	FallbackProfilePic string         `json:"fallback_profile_pic"`
 	Birb               *UserInfo      `json:"birb"`
+	AllowedHosts       []string       `json:"allowed_hosts"`
 }
 
 type UpdateSchedule struct {
