@@ -499,5 +499,27 @@ func (ib *inbox) getUrl(content string) string {
 		}
 		res = str
 	}
+
+	// If no https:// URL found, look for a bare domain
+	// (e.g. "generativeai.pub") and prepend https://
+	if res == "" {
+		reBare := regexp.MustCompile(
+			`(?:^|\s)([a-zA-Z0-9][-a-zA-Z0-9]*` +
+				`\.[a-zA-Z]{2,}(?:/[^ ]*)?)`)
+		bareMatches := reBare.FindAllStringSubmatch(
+			plain, -1)
+		for _, m := range bareMatches {
+			candidate := "https://" + m[1]
+			_, err := url.Parse(candidate)
+			if err != nil {
+				continue
+			}
+			if res != "" {
+				return ""
+			}
+			res = candidate
+		}
+	}
+
 	return res
 }

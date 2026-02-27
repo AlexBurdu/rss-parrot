@@ -280,38 +280,50 @@ func (ff *feedFollower) getSiteInfo(urlStr string) (*SiteInfo, *gofeed.Feed, err
 	res.ParrotHandle = shared.GetHandleFromUrl(res.Url)
 
 	// Get the page
+	req, reqErr := http.NewRequest("GET", urlStr, nil)
+	if reqErr != nil {
+		return nil, nil, reqErr
+	}
+	ff.userAgent.AddUserAgent(req)
 	client := http.Client{}
 	client.Timeout = feedOrSiteTimeoutSec * time.Second
-	resp, err := client.Get(urlStr)
-	if err != nil {
-		ff.logger.Warnf("Failed to get %s: %v", siteUrl, err)
-		return nil, nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		err = fmt.Errorf("request for %s failed with status %d", siteUrl, resp.StatusCode)
-		ff.logger.Warnf("Failed to get site: %v", err)
-		return nil, nil, err
-	}
+	resp, err := client.Do(req)
 
-	// Load the HTML document
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		ff.logger.Warnf("Failed to parse HTML from %s: %v", siteUrl, err)
-		return nil, nil, err
+	// If page fetch succeeds, try HTML autodiscovery
+	var doc *goquery.Document
+	if err == nil {
+		defer resp.Body.Close()
+		if resp.StatusCode == 200 {
+			doc, _ = goquery.NewDocumentFromReader(
+				resp.Body)
+		} else {
+			ff.logger.Warnf(
+				"Site returned %d for %s, "+
+					"trying feed probing",
+				resp.StatusCode, siteUrl)
+		}
+	} else {
+		ff.logger.Warnf(
+			"Failed to get %s: %v, trying feed probing",
+			siteUrl, err)
 	}
 
 	// Pick out the data we're interested in
-	res.FeedUrl = ff.getFeedUrl(siteUrl, doc)
+	if doc != nil {
+		res.FeedUrl = ff.getFeedUrl(siteUrl, doc)
+	}
 	if res.FeedUrl == "" {
-		// Autodiscovery failed. Try common feed URL patterns.
+		// Autodiscovery failed or page unavailable.
+		// Try common feed URL patterns.
 		res.FeedUrl = ff.probeFeedUrls(siteUrl)
 	}
 	if res.FeedUrl == "" {
 		ff.logger.Warnf("No feed URL found: %s", siteUrl)
 		return nil, nil, fmt.Errorf("no feed URL found at %s", siteUrl)
 	}
-	ff.getMetas(doc, &res)
+	if doc != nil {
+		ff.getMetas(doc, &res)
+	}
 
 	// Get the feed to make sure it's there, and know when it's last changed
 	feed, err = ff.fetchParseFeed(res.FeedUrl)
