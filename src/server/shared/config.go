@@ -33,6 +33,8 @@ type Config struct {
 	FallbackProfilePic string         `json:"fallback_profile_pic"`
 	Birb               *UserInfo      `json:"birb"`
 	AllowedHosts       []string       `json:"allowed_hosts"`
+	OllamaUrl          string         `json:"ollama_url"`
+	OllamaModel        string         `json:"ollama_model"`
 }
 
 type UpdateSchedule struct {

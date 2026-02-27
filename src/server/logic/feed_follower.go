@@ -65,6 +65,7 @@ type feedFollower struct {
 	txt                  texts.ITexts
 	keyStore             IKeyStore
 	metrics              IMetrics
+	summarizer           ISummarizer
 	lastCheckedPostCount time.Time
 	muPurgingOldPosts    sync.Mutex
 	isPurgingOldPosts    bool
@@ -82,6 +83,7 @@ func NewFeedFollower(
 	txt texts.ITexts,
 	keyStore IKeyStore,
 	metrics IMetrics,
+	summarizer ISummarizer,
 ) IFeedFollower {
 
 	ff := feedFollower{
@@ -94,6 +96,7 @@ func NewFeedFollower(
 		txt:                 txt,
 		keyStore:            keyStore,
 		metrics:             metrics,
+		summarizer:          summarizer,
 		isPurgingUnfollowed: false,
 	}
 
@@ -507,13 +510,33 @@ func (ff *feedFollower) createToot(accountId int, accountHandle string, itm *gof
 	prettyUrl = strings.TrimRight(prettyUrl, "/")
 	plainTitle := stripHtml(itm.Title)
 	plainDescription := stripHtml(itm.Description)
-	plainDescription = shared.TruncateWithEllipsis(plainDescription, shared.MaxDescriptionLen)
-	content := ff.txt.WithVals("toot_new_post.html", map[string]string{
-		"title":       plainTitle,
-		"url":         itm.Link,
-		"prettyUrl":   prettyUrl,
-		"description": plainDescription,
-	})
+	plainDescription = shared.TruncateWithEllipsis(
+		plainDescription, shared.MaxDescriptionLen)
+	// Generate AI summary from article text
+	summary := ""
+	articleText := plainTitle + ". " + plainDescription
+	if itm.Content != "" {
+		articleText = stripHtml(itm.Content)
+	}
+	summary = ff.summarizer.Summarize(articleText)
+	content := ff.txt.WithVals(
+		"toot_new_post.html", map[string]string{
+			"title":       plainTitle,
+			"url":         itm.Link,
+			"prettyUrl":   prettyUrl,
+			"description": plainDescription,
+		})
+	// Insert AI summary before description paragraph.
+	// Done outside the template to avoid HTML escaping.
+	if summary != "" {
+		summaryHtml := "<p><em>" +
+			html.EscapeString(summary) + "</em></p>"
+		content = strings.Replace(content,
+			"<p>"+html.EscapeString(plainDescription),
+			summaryHtml+"<p>"+
+				html.EscapeString(plainDescription),
+			1)
+	}
 	idb := shared.IdBuilder{ff.cfg.Host}
 	id := ff.repo.GetNextId()
 	statusId := idb.UserStatus(accountHandle, id)
