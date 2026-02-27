@@ -15,7 +15,7 @@ import (
 // ISummarizer generates short summaries of article text
 // using a local LLM via the Ollama API.
 type ISummarizer interface {
-	// Summarize returns a 1-2 sentence summary of the
+	// Summarize returns a 2-4 sentence summary of the
 	// given text. Returns empty string if summarization
 	// is disabled or fails.
 	Summarize(text string) string
@@ -46,13 +46,13 @@ type ollamaResponse struct {
 const (
 	// Max input text length to send to the LLM.
 	maxInputLen = 2000
-	// Timeout for Ollama API calls. TinyLlama on RPi 4
-	// takes ~30s for short summaries.
-	ollamaTimeout = 60 * time.Second
+	// Timeout for Ollama API calls. Gemma 2B on RPi 4
+	// takes ~60s for a few sentences.
+	ollamaTimeout = 120 * time.Second
 	// Prompt template for summarization.
 	summaryPrompt = "Summarize the following article " +
-		"in 1-2 sentences. Be concise and " +
-		"informative. Only output the summary, " +
+		"in 2-4 sentences. Cover the key points. " +
+		"Only output the summary, " +
 		"nothing else.\n\n%s"
 )
 
