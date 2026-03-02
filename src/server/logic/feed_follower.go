@@ -47,12 +47,13 @@ type IFeedFollower interface {
 }
 
 type SiteInfo struct {
-	Url          string
-	ParrotHandle string
-	FeedUrl      string
-	LastUpdated  time.Time
-	Title        string
-	Description  string
+	Url             string
+	ParrotHandle    string
+	FeedUrl         string
+	LastUpdated     time.Time
+	Title           string
+	Description     string
+	ProfileImageUrl string
 }
 
 type feedFollower struct {
@@ -145,6 +146,59 @@ func (ff *feedFollower) getFeedUrl(siteUrl *url.URL, doc *goquery.Document) stri
 	res := feedUrl.String()
 	res = strings.TrimRight(res, "/")
 	return res
+}
+
+func (ff *feedFollower) discoverSiteIcon(siteUrl *url.URL, doc *goquery.Document) string {
+
+	if doc == nil {
+		return ff.checkFavicon(siteUrl)
+	}
+
+	var iconUrl string
+	// 1. apple-touch-icon
+	doc.Find("link[rel='apple-touch-icon']").Each(func(_ int, s *goquery.Selection) {
+		if href, ok := s.Attr("href"); ok && iconUrl == "" {
+			iconUrl = href
+		}
+	})
+
+	// 2. icon
+	if iconUrl == "" {
+		doc.Find("link[rel='icon']").Each(func(_ int, s *goquery.Selection) {
+			if href, ok := s.Attr("href"); ok && iconUrl == "" {
+				iconUrl = href
+			}
+		})
+	}
+
+	if iconUrl != "" {
+		// Make it absolute
+		parsedIconUrl, err := url.Parse(iconUrl)
+		if err == nil {
+			if !parsedIconUrl.IsAbs() {
+				parsedIconUrl = siteUrl.ResolveReference(parsedIconUrl)
+			}
+			return parsedIconUrl.String()
+		}
+	}
+
+	// 3. /favicon.ico fallback
+	return ff.checkFavicon(siteUrl)
+}
+
+func (ff *feedFollower) checkFavicon(siteUrl *url.URL) string {
+	faviconUrl := fmt.Sprintf("%s://%s/favicon.ico", siteUrl.Scheme, siteUrl.Host)
+	req, _ := http.NewRequest("HEAD", faviconUrl, nil)
+	ff.userAgent.AddUserAgent(req)
+	client := http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err == nil {
+		defer resp.Body.Close()
+		if resp.StatusCode == 200 {
+			return faviconUrl
+		}
+	}
+	return ""
 }
 
 // probeFeedUrls tries common feed URL patterns when
@@ -271,6 +325,10 @@ func (ff *feedFollower) getSiteInfo(urlStr string) (*SiteInfo, *gofeed.Feed, err
 		res.Description = feed.Description
 		res.Url = feed.Link
 		res.ParrotHandle = shared.GetHandleFromUrl(res.Url)
+		// Try to get icon from the main site
+		if siteUrl, err := url.Parse(res.Url); err == nil {
+			res.ProfileImageUrl = ff.discoverSiteIcon(siteUrl, nil)
+		}
 		return &res, feed, nil
 	}
 
@@ -314,11 +372,15 @@ func (ff *feedFollower) getSiteInfo(urlStr string) (*SiteInfo, *gofeed.Feed, err
 	// Pick out the data we're interested in
 	if doc != nil {
 		res.FeedUrl = ff.getFeedUrl(siteUrl, doc)
+		res.ProfileImageUrl = ff.discoverSiteIcon(siteUrl, doc)
 	}
 	if res.FeedUrl == "" {
 		// Autodiscovery failed or page unavailable.
 		// Try common feed URL patterns.
 		res.FeedUrl = ff.probeFeedUrls(siteUrl)
+		if res.ProfileImageUrl == "" {
+			res.ProfileImageUrl = ff.discoverSiteIcon(siteUrl, nil)
+		}
 	}
 	if res.FeedUrl == "" {
 		ff.logger.Warnf("No feed URL found: %s", siteUrl)
@@ -624,14 +686,15 @@ func (ff *feedFollower) GetAccountForFeed(urlStr string) (acct *dal.Account, sta
 
 	var isNew bool
 	isNew, err = ff.repo.AddAccountIfNotExist(&dal.Account{
-		CreatedAt:   time.Now(),
-		Handle:      si.ParrotHandle,
-		UserUrl:     idb.UserUrl(si.ParrotHandle),
-		FeedName:    si.Title,
-		FeedSummary: si.Description,
-		SiteUrl:     si.Url,
-		FeedUrl:     si.FeedUrl,
-		PubKey:      pubKey,
+		CreatedAt:       time.Now(),
+		Handle:          si.ParrotHandle,
+		UserUrl:         idb.UserUrl(si.ParrotHandle),
+		FeedName:        si.Title,
+		FeedSummary:     si.Description,
+		ProfileImageUrl: si.ProfileImageUrl,
+		SiteUrl:         si.Url,
+		FeedUrl:         si.FeedUrl,
+		PubKey:          pubKey,
 	}, privKey)
 
 	if err != nil {
