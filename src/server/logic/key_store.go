@@ -84,11 +84,18 @@ func (ks *keyStore) MakeKeyPair() (pubKey, privKey string, err error) {
 	}
 	keyPEM := pem.EncodeToMemory(encBlock)
 
-	// Encode public key to PKCS#1
+	// Encode public key to SPKI (PKIX) format.
+	// GoToSocial requires SPKI ("BEGIN PUBLIC KEY") for HTTP
+	// signature verification — PKCS#1 ("BEGIN RSA PUBLIC KEY")
+	// is rejected.
+	pubBytes, err := x509.MarshalPKIXPublicKey(pub)
+	if err != nil {
+		return
+	}
 	pubPEM := pem.EncodeToMemory(
 		&pem.Block{
-			Type:  "RSA PUBLIC KEY",
-			Bytes: x509.MarshalPKCS1PublicKey(pub.(*rsa.PublicKey)),
+			Type:  "PUBLIC KEY",
+			Bytes: pubBytes,
 		},
 	)
 
