@@ -48,6 +48,7 @@ type IRepo interface {
 	SetFollowerApproveStatus(user, followerUserUrl string, status int) error
 	AddFollower(user string, follower *FollowerInfo) error
 	RemoveFollower(user, followerUserUrl string) error
+	GetDistinctSharedInboxes() ([]string, error)
 	AddTootQueueItem(tqi *TootQueueItem) error
 	GetTootQueueItems(aboveId, maxCount int) ([]*TootQueueItem, int, error)
 	DeleteTootQueueItem(id int) error
@@ -657,6 +658,35 @@ func (repo *Repo) RemoveFollower(user, followerUserUrl string) error {
 		return err
 	}
 	return nil
+}
+
+func (repo *Repo) GetDistinctSharedInboxes() ([]string, error) {
+
+	repo.muDb.RLock()
+	defer repo.muDb.RUnlock()
+
+	rows, err := repo.db.Query(
+		`SELECT DISTINCT shared_inbox FROM followers
+		 WHERE shared_inbox != ''
+		 UNION
+		 SELECT DISTINCT user_inbox FROM followers
+		 WHERE shared_inbox = '' AND user_inbox != ''`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var res []string
+	for rows.Next() {
+		var inbox string
+		if err = rows.Scan(&inbox); err != nil {
+			return nil, err
+		}
+		res = append(res, inbox)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func (repo *Repo) GetFeedLastUpdated(accountId int) (res time.Time, err error) {

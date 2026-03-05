@@ -126,6 +126,21 @@ func (mr *MockIRepoMockRecorder) BruteDeleteAccount(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BruteDeleteAccount", reflect.TypeOf((*MockIRepo)(nil).BruteDeleteAccount), arg0)
 }
 
+// GetDistinctSharedInboxes mocks base method.
+func (m *MockIRepo) GetDistinctSharedInboxes() ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDistinctSharedInboxes")
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDistinctSharedInboxes indicates an expected call of GetDistinctSharedInboxes.
+func (mr *MockIRepoMockRecorder) GetDistinctSharedInboxes() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDistinctSharedInboxes", reflect.TypeOf((*MockIRepo)(nil).GetDistinctSharedInboxes))
+}
+
 // DeleteHandledActivities mocks base method.
 func (m *MockIRepo) DeleteHandledActivities(arg0 time.Time) error {
 	m.ctrl.T.Helper()

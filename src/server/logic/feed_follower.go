@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"rss_parrot/dal"
+	"rss_parrot/dto"
 	"rss_parrot/shared"
 	"rss_parrot/texts"
 	"sort"
@@ -65,6 +66,7 @@ type feedFollower struct {
 	messenger            IMessenger
 	txt                  texts.ITexts
 	keyStore             IKeyStore
+	sender               IActivitySender
 	metrics              IMetrics
 	summarizer           ISummarizer
 	lastCheckedPostCount time.Time
@@ -83,6 +85,7 @@ func NewFeedFollower(
 	messenger IMessenger,
 	txt texts.ITexts,
 	keyStore IKeyStore,
+	sender IActivitySender,
 	metrics IMetrics,
 	summarizer ISummarizer,
 ) IFeedFollower {
@@ -96,6 +99,7 @@ func NewFeedFollower(
 		messenger:           messenger,
 		txt:                 txt,
 		keyStore:            keyStore,
+		sender:              sender,
 		metrics:             metrics,
 		summarizer:          summarizer,
 		isPurgingUnfollowed: false,
@@ -889,12 +893,72 @@ func (ff *feedFollower) purgeUnfollowedAccount(acct *dal.Account) {
 		return
 	}
 	ff.logger.Infof("Deleting account with 0 followers: %s", acct.Handle)
+
+	// Send Delete activity to all known instances so they
+	// drop the cached actor. Without this, re-creating the
+	// account later produces a key mismatch (the new keypair
+	// won't match the instance's cached public key).
+	ff.sendDeleteToKnownInstances(acct)
+
 	if err = ff.repo.BruteDeleteAccount(acct.Id); err != nil {
 		ff.logger.Errorf("Failed to brute-delete account: %s: %v", acct.Handle, err)
 		return
 	}
 	if ff.cfg.PurgeWaitSec > 0 {
 		time.Sleep(time.Duration(ff.cfg.PurgeWaitSec) * time.Second)
+	}
+}
+
+// sendDeleteToKnownInstances sends a Delete activity
+// for the given account to all remote instances that
+// have followers on this server. This tells them to
+// drop their cached copy of the actor, preventing key
+// mismatch errors if the account is later re-created.
+func (ff *feedFollower) sendDeleteToKnownInstances(
+	acct *dal.Account,
+) {
+	idb := shared.IdBuilder{ff.cfg.Host}
+
+	privKey, err := ff.keyStore.GetPrivKey(acct.Handle)
+	if err != nil {
+		ff.logger.Errorf(
+			"Failed to get key for Delete: %s: %v",
+			acct.Handle, err)
+		return
+	}
+
+	inboxes, err := ff.repo.GetDistinctSharedInboxes()
+	if err != nil {
+		ff.logger.Errorf(
+			"Failed to get inboxes for Delete: %v",
+			err)
+		return
+	}
+	if len(inboxes) == 0 {
+		return
+	}
+
+	actorUrl := idb.UserUrl(acct.Handle)
+	actId := ff.repo.GetNextId()
+	activity := &dto.ActivityOut{
+		Context: "https://www.w3.org/ns/activitystreams",
+		Id:      idb.ActivityUrl(actId),
+		Type:    "Delete",
+		Actor:   actorUrl,
+		Object:  actorUrl,
+	}
+
+	for _, inbox := range inboxes {
+		ff.logger.Infof(
+			"Sending Delete for %s to %s",
+			acct.Handle, inbox)
+		if err := ff.sender.Send(
+			privKey, acct.Handle, inbox, activity,
+		); err != nil {
+			ff.logger.Errorf(
+				"Failed to send Delete to %s: %v",
+				inbox, err)
+		}
 	}
 }
 
