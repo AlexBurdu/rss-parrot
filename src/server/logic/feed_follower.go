@@ -711,11 +711,23 @@ func (ff *feedFollower) GetAccountForFeed(urlStr string) (acct *dal.Account, sta
 		return
 	}
 
-	err = ff.updateAccountPosts(acct.Id, si.ParrotHandle, feed, !isNew)
-	if err != nil {
-		ff.logger.Errorf("Failed to update account's posts: %s: %v", acct.Handle, err)
-		acct = nil
-		return
+	if isNew {
+		// New account: fetch articles in background so the
+		// reply to the user is not blocked by summarization.
+		acctId := acct.Id
+		handle := si.ParrotHandle
+		go func() {
+			if err := ff.updateAccountPosts(acctId, handle, feed, false); err != nil {
+				ff.logger.Errorf("Failed to update new account's posts: %s: %v", handle, err)
+			}
+		}()
+	} else {
+		err = ff.updateAccountPosts(acct.Id, si.ParrotHandle, feed, true)
+		if err != nil {
+			ff.logger.Errorf("Failed to update account's posts: %s: %v", acct.Handle, err)
+			acct = nil
+			return
+		}
 	}
 
 	if isNew {
