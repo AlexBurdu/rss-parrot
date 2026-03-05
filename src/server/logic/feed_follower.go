@@ -180,25 +180,48 @@ func (ff *feedFollower) discoverSiteIcon(siteUrl *url.URL, doc *goquery.Document
 		parsedIconUrl, err := url.Parse(iconUrl)
 		if err == nil {
 			if !parsedIconUrl.IsAbs() {
-				parsedIconUrl = siteUrl.ResolveReference(parsedIconUrl)
+				parsedIconUrl = siteUrl.ResolveReference(
+					parsedIconUrl)
 			}
-			return parsedIconUrl.String()
+			absUrl := parsedIconUrl.String()
+			// Skip .ico — not supported by GTS/Mastodon
+			if !strings.HasSuffix(
+				strings.ToLower(parsedIconUrl.Path),
+				".ico") {
+				return absUrl
+			}
 		}
 	}
 
-	// 3. /favicon.ico fallback
+	// 3. /favicon.ico fallback (only if PNG/JPEG/etc)
 	return ff.checkFavicon(siteUrl)
 }
 
+// isSupportedImageType returns true if the content type
+// is a standard image format supported by ActivityPub
+// consumers (GoToSocial, Mastodon, etc). ICO format is
+// intentionally excluded — it causes download failures.
+func isSupportedImageType(contentType string) bool {
+	ct := strings.ToLower(contentType)
+	return strings.HasPrefix(ct, "image/png") ||
+		strings.HasPrefix(ct, "image/jpeg") ||
+		strings.HasPrefix(ct, "image/gif") ||
+		strings.HasPrefix(ct, "image/webp") ||
+		strings.HasPrefix(ct, "image/svg")
+}
+
 func (ff *feedFollower) checkFavicon(siteUrl *url.URL) string {
-	faviconUrl := fmt.Sprintf("%s://%s/favicon.ico", siteUrl.Scheme, siteUrl.Host)
+	faviconUrl := fmt.Sprintf("%s://%s/favicon.ico",
+		siteUrl.Scheme, siteUrl.Host)
 	req, _ := http.NewRequest("HEAD", faviconUrl, nil)
 	ff.userAgent.AddUserAgent(req)
 	client := http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
 	if err == nil {
 		defer resp.Body.Close()
-		if resp.StatusCode == 200 {
+		ct := resp.Header.Get("Content-Type")
+		if resp.StatusCode == 200 &&
+			isSupportedImageType(ct) {
 			return faviconUrl
 		}
 	}
