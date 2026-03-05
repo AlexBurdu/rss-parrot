@@ -152,6 +152,40 @@ func (ff *feedFollower) getFeedUrl(siteUrl *url.URL, doc *goquery.Document) stri
 	return res
 }
 
+// discoverIcon tries multiple strategies to find a
+// profile image for a feed account:
+// 1. RSS/Atom feed <image> element (if non-ICO PNG/JPEG)
+// 2. HTML <link> tags (apple-touch-icon, icon)
+// 3. /favicon.ico with content-type validation
+// 4. Google Favicon API fallback (returns PNG)
+func (ff *feedFollower) discoverIcon(
+	siteUrl *url.URL,
+	doc *goquery.Document,
+	feed *gofeed.Feed,
+) string {
+	// 1. Feed image (parsed by gofeed from <image><url>)
+	if feed != nil && feed.Image != nil &&
+		feed.Image.URL != "" {
+		imgUrl := feed.Image.URL
+		if !strings.HasSuffix(
+			strings.ToLower(imgUrl), ".ico") {
+			return imgUrl
+		}
+	}
+
+	// 2-3. HTML link tags and favicon.ico
+	icon := ff.discoverSiteIcon(siteUrl, doc)
+	if icon != "" {
+		return icon
+	}
+
+	// 4. Google Favicon API — always returns PNG
+	return fmt.Sprintf(
+		"https://www.google.com/s2/favicons"+
+			"?domain=%s&sz=128",
+		siteUrl.Host)
+}
+
 func (ff *feedFollower) discoverSiteIcon(siteUrl *url.URL, doc *goquery.Document) string {
 
 	if doc == nil {
@@ -352,9 +386,10 @@ func (ff *feedFollower) getSiteInfo(urlStr string) (*SiteInfo, *gofeed.Feed, err
 		res.Description = feed.Description
 		res.Url = feed.Link
 		res.ParrotHandle = shared.GetHandleFromUrl(res.Url)
-		// Try to get icon from the main site
+		// Try feed image, then site icon, then fallback
 		if siteUrl, err := url.Parse(res.Url); err == nil {
-			res.ProfileImageUrl = ff.discoverSiteIcon(siteUrl, nil)
+			res.ProfileImageUrl = ff.discoverIcon(
+				siteUrl, nil, feed)
 		}
 		return &res, feed, nil
 	}
@@ -399,15 +434,11 @@ func (ff *feedFollower) getSiteInfo(urlStr string) (*SiteInfo, *gofeed.Feed, err
 	// Pick out the data we're interested in
 	if doc != nil {
 		res.FeedUrl = ff.getFeedUrl(siteUrl, doc)
-		res.ProfileImageUrl = ff.discoverSiteIcon(siteUrl, doc)
 	}
 	if res.FeedUrl == "" {
 		// Autodiscovery failed or page unavailable.
 		// Try common feed URL patterns.
 		res.FeedUrl = ff.probeFeedUrls(siteUrl)
-		if res.ProfileImageUrl == "" {
-			res.ProfileImageUrl = ff.discoverSiteIcon(siteUrl, nil)
-		}
 	}
 	if res.FeedUrl == "" {
 		ff.logger.Warnf("No feed URL found: %s", siteUrl)
@@ -424,6 +455,8 @@ func (ff *feedFollower) getSiteInfo(urlStr string) (*SiteInfo, *gofeed.Feed, err
 		return nil, nil, err
 	}
 	res.LastUpdated = getLastUpdated(feed)
+	res.ProfileImageUrl = ff.discoverIcon(
+		siteUrl, doc, feed)
 
 	return &res, feed, nil
 }
