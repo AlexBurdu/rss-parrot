@@ -34,10 +34,9 @@ func NewSummarizer(
 }
 
 type ollamaRequest struct {
-	Model     string `json:"model"`
-	Prompt    string `json:"prompt"`
-	Stream    bool   `json:"stream"`
-	KeepAlive int    `json:"keep_alive"`
+	Model  string `json:"model"`
+	Prompt string `json:"prompt"`
+	Stream bool   `json:"stream"`
 }
 
 type ollamaResponse struct {
@@ -68,10 +67,9 @@ func (s *summarizer) Summarize(text string) string {
 
 	prompt := fmt.Sprintf(summaryPrompt, text)
 	reqBody := ollamaRequest{
-		Model:     s.cfg.OllamaModel,
-		Prompt:    prompt,
-		Stream:    false,
-		KeepAlive: -1,
+		Model:  s.cfg.OllamaModel,
+		Prompt: prompt,
+		Stream: false,
 	}
 
 	bodyBytes, err := json.Marshal(reqBody)
