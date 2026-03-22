@@ -47,8 +47,9 @@ const (
 	// Max input text length to send to the LLM.
 	maxInputLen = 2000
 	// Timeout for Ollama API calls. Gemma 2B on RPi 4
-	// takes ~60s for a few sentences.
-	ollamaTimeout = 120 * time.Second
+	// takes ~30s model load + ~3min inference on a
+	// 2000-char article.
+	ollamaTimeout = 300 * time.Second
 	// Prompt template for summarization.
 	summaryPrompt = "Summarize the following article " +
 		"in 2-4 sentences. Cover the key points. " +
