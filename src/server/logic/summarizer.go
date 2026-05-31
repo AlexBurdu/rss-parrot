@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"rss_parrot/shared"
 	"time"
@@ -54,7 +55,51 @@ const (
 		"in 2-4 sentences. Cover the key points. " +
 		"Only output the summary, " +
 		"nothing else.\n\n%s"
+	// Retry configuration for failed summarization.
+	maxSummarizeRetries = 3
+	// Base backoff duration for retry attempts.
+	retryBaseBackoff = 1 * time.Second
 )
+
+// callOllama makes a single attempt to call the Ollama API.
+// Returns the summary response and any error encountered.
+func (s *summarizer) callOllama(text string) (string, error) {
+	prompt := fmt.Sprintf(summaryPrompt, text)
+	reqBody := ollamaRequest{
+		Model:  s.cfg.OllamaModel,
+		Prompt: prompt,
+		Stream: false,
+	}
+
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return "", fmt.Errorf("marshal error: %w", err)
+	}
+
+	url := s.cfg.OllamaUrl + "/api/generate"
+	client := http.Client{Timeout: ollamaTimeout}
+	resp, err := client.Post(url, "application/json", bytes.NewReader(bodyBytes))
+	if err != nil {
+		return "", fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("Ollama returned status %d", resp.StatusCode)
+	}
+
+	respBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("read response error: %w", err)
+	}
+
+	var ollamaResp ollamaResponse
+	if err := json.Unmarshal(respBytes, &ollamaResp); err != nil {
+		return "", fmt.Errorf("unmarshal error: %w", err)
+	}
+
+	return ollamaResp.Response, nil
+}
 
 func (s *summarizer) Summarize(text string) string {
 	if s.cfg.OllamaUrl == "" || s.cfg.OllamaModel == "" {
@@ -65,54 +110,27 @@ func (s *summarizer) Summarize(text string) string {
 		text = text[:maxInputLen]
 	}
 
-	prompt := fmt.Sprintf(summaryPrompt, text)
-	reqBody := ollamaRequest{
-		Model:  s.cfg.OllamaModel,
-		Prompt: prompt,
-		Stream: false,
+	// Retry with exponential backoff on transient failures
+	var lastErr error
+	for attempt := 0; attempt < maxSummarizeRetries; attempt++ {
+		if attempt > 0 {
+			// Exponential backoff: 1s, 2s, 4s
+			backoff := retryBaseBackoff * time.Duration(math.Pow(2, float64(attempt-1)))
+			s.logger.Infof("Summarizer: retry attempt %d/%d after %v delay (error: %v)",
+				attempt, maxSummarizeRetries, backoff, lastErr)
+			time.Sleep(backoff)
+		}
+
+		response, err := s.callOllama(text)
+		if err == nil {
+			return response
+		}
+		lastErr = err
+		s.logger.Warnf("Summarizer: attempt %d failed: %v", attempt+1, err)
 	}
 
-	bodyBytes, err := json.Marshal(reqBody)
-	if err != nil {
-		s.logger.Warnf("Summarizer: marshal error: %v",
-			err)
-		return ""
-	}
-
-	url := s.cfg.OllamaUrl + "/api/generate"
-	client := http.Client{Timeout: ollamaTimeout}
-	resp, err := client.Post(
-		url, "application/json",
-		bytes.NewReader(bodyBytes))
-	if err != nil {
-		s.logger.Warnf(
-			"Summarizer: Ollama request failed: %v",
-			err)
-		return ""
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		s.logger.Warnf(
-			"Summarizer: Ollama returned %d",
-			resp.StatusCode)
-		return ""
-	}
-
-	respBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		s.logger.Warnf(
-			"Summarizer: read response error: %v",
-			err)
-		return ""
-	}
-
-	var ollamaResp ollamaResponse
-	if err := json.Unmarshal(respBytes, &ollamaResp); err != nil {
-		s.logger.Warnf(
-			"Summarizer: unmarshal error: %v", err)
-		return ""
-	}
-
-	return ollamaResp.Response
+	// All retries exhausted or permanent error
+	s.logger.Warnf("Summarizer: all %d attempts failed, last error: %v",
+		maxSummarizeRetries, lastErr)
+	return ""
 }
