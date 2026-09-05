@@ -19,6 +19,19 @@ type ISummarizer interface {
 	// given text. Returns empty string if summarization
 	// is disabled or fails.
 	Summarize(text string) string
+
+	// IsEnabled reports whether summarization is
+	// configured. Summarize returns an empty string
+	// both when disabled and when Ollama fails, so
+	// callers that need to tell the two apart — the
+	// retry queue does — must ask here.
+	IsEnabled() bool
+
+	// TrimForSummary shortens text to the longest
+	// input the summarizer would actually send, so a
+	// caller storing it for a later retry does not
+	// keep bytes that would be thrown away.
+	TrimForSummary(text string) string
 }
 
 type summarizer struct {
@@ -57,14 +70,23 @@ const (
 		"nothing else.\n\n%s"
 )
 
+func (s *summarizer) IsEnabled() bool {
+	return s.cfg.OllamaUrl != "" && s.cfg.OllamaModel != ""
+}
+
+func (s *summarizer) TrimForSummary(text string) string {
+	if len(text) > maxInputLen {
+		return text[:maxInputLen]
+	}
+	return text
+}
+
 func (s *summarizer) Summarize(text string) string {
-	if s.cfg.OllamaUrl == "" || s.cfg.OllamaModel == "" {
+	if !s.IsEnabled() {
 		return ""
 	}
 
-	if len(text) > maxInputLen {
-		text = text[:maxInputLen]
-	}
+	text = s.TrimForSummary(text)
 
 	prompt := fmt.Sprintf(summaryPrompt, text)
 	reqBody := ollamaRequest{

@@ -40,6 +40,40 @@ type Toot struct {
 	Content      string
 }
 
+// PendingSummaryState is the lifecycle state of a
+// toot_summaries row.
+type PendingSummaryState int
+
+const (
+	// PsPending: the article still needs a summary.
+	PsPending PendingSummaryState = 0
+	// PsDone: a retry produced a summary and the toot
+	// content has been rewritten.
+	PsDone PendingSummaryState = 1
+	// PsAbandoned: the retry cap was reached; the
+	// article will never be summarized.
+	PsAbandoned PendingSummaryState = -1
+)
+
+// PendingSummary is one article whose AI summary was
+// missing when its toot was posted, queued for a
+// bounded number of background retries.
+type PendingSummary struct {
+	AccountId int
+	// StatusId is the toot this summary belongs to; it
+	// is the natural key of the row.
+	StatusId string
+	// ArticleText is the already-truncated text handed
+	// to the summarizer. Cleared on a terminal state.
+	ArticleText string
+	// Attempts counts background retries only; the
+	// inline attempt made when the toot was created is
+	// not included.
+	Attempts     int
+	NextRetryDue time.Time
+	State        PendingSummaryState
+}
+
 type TootQueueItem struct {
 	Id          int
 	SendingUser string

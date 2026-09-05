@@ -21,6 +21,7 @@ import (
 type MockIFeedFollower struct {
 	ctrl     *gomock.Controller
 	recorder *MockIFeedFollowerMockRecorder
+	isgomock struct{}
 }
 
 // MockIFeedFollowerMockRecorder is the mock recorder for MockIFeedFollower.
@@ -41,9 +42,9 @@ func (m *MockIFeedFollower) EXPECT() *MockIFeedFollowerMockRecorder {
 }
 
 // GetAccountForFeed mocks base method.
-func (m *MockIFeedFollower) GetAccountForFeed(arg0 string) (*dal.Account, logic.FeedStatus, error) {
+func (m *MockIFeedFollower) GetAccountForFeed(urlStr string) (*dal.Account, logic.FeedStatus, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAccountForFeed", arg0)
+	ret := m.ctrl.Call(m, "GetAccountForFeed", urlStr)
 	ret0, _ := ret[0].(*dal.Account)
 	ret1, _ := ret[1].(logic.FeedStatus)
 	ret2, _ := ret[2].(error)
@@ -51,21 +52,33 @@ func (m *MockIFeedFollower) GetAccountForFeed(arg0 string) (*dal.Account, logic.
 }
 
 // GetAccountForFeed indicates an expected call of GetAccountForFeed.
-func (mr *MockIFeedFollowerMockRecorder) GetAccountForFeed(arg0 any) *gomock.Call {
+func (mr *MockIFeedFollowerMockRecorder) GetAccountForFeed(urlStr any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountForFeed", reflect.TypeOf((*MockIFeedFollower)(nil).GetAccountForFeed), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountForFeed", reflect.TypeOf((*MockIFeedFollower)(nil).GetAccountForFeed), urlStr)
 }
 
 // PurgeOldPosts mocks base method.
-func (m *MockIFeedFollower) PurgeOldPosts(arg0 *dal.Account, arg1, arg2 int) error {
+func (m *MockIFeedFollower) PurgeOldPosts(acct *dal.Account, minCount, minAgeDays int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PurgeOldPosts", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "PurgeOldPosts", acct, minCount, minAgeDays)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // PurgeOldPosts indicates an expected call of PurgeOldPosts.
-func (mr *MockIFeedFollowerMockRecorder) PurgeOldPosts(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockIFeedFollowerMockRecorder) PurgeOldPosts(acct, minCount, minAgeDays any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PurgeOldPosts", reflect.TypeOf((*MockIFeedFollower)(nil).PurgeOldPosts), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PurgeOldPosts", reflect.TypeOf((*MockIFeedFollower)(nil).PurgeOldPosts), acct, minCount, minAgeDays)
+}
+
+// Start mocks base method.
+func (m *MockIFeedFollower) Start() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Start")
+}
+
+// Start indicates an expected call of Start.
+func (mr *MockIFeedFollowerMockRecorder) Start() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockIFeedFollower)(nil).Start))
 }

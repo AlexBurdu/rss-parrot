@@ -13,7 +13,7 @@ import (
 
 //go:generate mockgen --build_flags=--mod=mod -destination ../test/mocks/mock_repo.go -package mocks rss_parrot/dal IRepo
 
-const schemaVer = 6
+const schemaVer = 7
 
 //go:embed scripts/*
 var scripts embed.FS
@@ -30,6 +30,26 @@ type IRepo interface {
 	GetAccountsPage(offset, limit int) ([]*Account, int, error)
 	AddToot(accountId int, toot *Toot) error
 	GetToot(statusId string) (*Toot, error)
+	UpdateTootContent(statusId, content string) error
+
+	// AddPendingSummaryIfNew queues an article whose
+	// summary was missing when its toot was posted. A
+	// second call for the same status is a no-op.
+	AddPendingSummaryIfNew(ps *PendingSummary) error
+
+	// GetPendingSummaryToRetry returns the longest-due
+	// pending row at or before due, or nil when none
+	// is ready.
+	GetPendingSummaryToRetry(due time.Time) (*PendingSummary, error)
+
+	// ReschedulePendingSummary records a failed retry
+	// and sets when the next one may run.
+	ReschedulePendingSummary(statusId string, attempts int, nextRetryDue time.Time) error
+
+	// FinishPendingSummary moves a row to a terminal
+	// state (PsDone or PsAbandoned) and drops its
+	// article text.
+	FinishPendingSummary(statusId string, state PendingSummaryState) error
 	GetPostCount(user string) (uint, error)
 	GetTotalPostCount() (uint, error)
 	GetPostsPage(accountId int, offset, limit int) ([]*FeedPost, error)
@@ -274,7 +294,11 @@ func (repo *Repo) BruteDeleteAccount(accountId int) error {
 	step1 := func() error {
 		repo.muDb.Lock()
 		defer repo.muDb.Unlock()
-		_, err := repo.db.Exec(`DELETE FROM toots WHERE account_id=?`, accountId)
+		_, err := repo.db.Exec(`DELETE FROM toot_summaries WHERE account_id=?`, accountId)
+		if err != nil {
+			return err
+		}
+		_, err = repo.db.Exec(`DELETE FROM toots WHERE account_id=?`, accountId)
 		if err != nil {
 			return err
 		}
@@ -836,6 +860,12 @@ func (repo *Repo) PurgePostsAndToots(accountId int, fromBefore time.Time) error 
        	WHERE account_id=? AND post_time<=?`, accountId, fromBefore); err != nil {
 		return err
 	}
+	if _, err := repo.db.Exec(`DELETE FROM toot_summaries
+		WHERE status_id IN (SELECT status_id FROM toots
+		WHERE account_id=? AND tooted_at<=?)`,
+		accountId, fromBefore); err != nil {
+		return err
+	}
 	if _, err := repo.db.Exec(`DELETE FROM toots
        	WHERE account_id=? AND tooted_at<=?`, accountId, fromBefore); err != nil {
 		return err
@@ -877,5 +907,82 @@ func (repo *Repo) DeleteHandledActivities(before time.Time) error {
 	defer repo.muDb.Unlock()
 
 	_, err := repo.db.Exec(`DELETE FROM handled_activities WHERE handled_at<?`, before)
+	return err
+}
+
+func (repo *Repo) UpdateTootContent(statusId, content string) error {
+
+	repo.muDb.Lock()
+	defer repo.muDb.Unlock()
+
+	_, err := repo.db.Exec(`UPDATE toots SET content=? WHERE status_id=?`,
+		content, statusId)
+	return err
+}
+
+func (repo *Repo) AddPendingSummaryIfNew(ps *PendingSummary) error {
+
+	repo.muDb.Lock()
+	defer repo.muDb.Unlock()
+
+	// status_id is unique, so a re-queue of the same
+	// toot is quietly dropped instead of duplicating
+	// work or resetting an exhausted retry count.
+	_, err := repo.db.Exec(`INSERT OR IGNORE INTO toot_summaries
+		(account_id, status_id, article_text, attempts, next_retry_due, state)
+		VALUES(?, ?, ?, ?, ?, ?)`,
+		ps.AccountId, ps.StatusId, ps.ArticleText, ps.Attempts,
+		ps.NextRetryDue, ps.State)
+	return err
+}
+
+func (repo *Repo) GetPendingSummaryToRetry(due time.Time) (*PendingSummary, error) {
+
+	repo.muDb.RLock()
+	defer repo.muDb.RUnlock()
+
+	query := `SELECT account_id, status_id, article_text, attempts,
+		next_retry_due, state FROM toot_summaries
+		WHERE state=? AND next_retry_due<=?
+		ORDER BY next_retry_due ASC LIMIT 1`
+	rows, err := repo.db.Query(query, PsPending, due)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		ps := PendingSummary{}
+		if err = rows.Scan(&ps.AccountId, &ps.StatusId, &ps.ArticleText,
+			&ps.Attempts, &ps.NextRetryDue, &ps.State); err != nil {
+			return nil, err
+		}
+		return &ps, nil
+	}
+	return nil, rows.Err()
+}
+
+func (repo *Repo) ReschedulePendingSummary(statusId string, attempts int, nextRetryDue time.Time) error {
+
+	repo.muDb.Lock()
+	defer repo.muDb.Unlock()
+
+	_, err := repo.db.Exec(`UPDATE toot_summaries
+		SET attempts=?, next_retry_due=? WHERE status_id=?`,
+		attempts, nextRetryDue, statusId)
+	return err
+}
+
+func (repo *Repo) FinishPendingSummary(statusId string, state PendingSummaryState) error {
+
+	repo.muDb.Lock()
+	defer repo.muDb.Unlock()
+
+	// The article text is only needed while retries can
+	// still happen; dropping it keeps a terminal row
+	// small enough to keep around for diagnostics.
+	_, err := repo.db.Exec(`UPDATE toot_summaries
+		SET state=?, article_text='' WHERE status_id=?`,
+		state, statusId)
 	return err
 }

@@ -28,6 +28,7 @@ type feedFollowerHarness struct {
 	mockSender       *mocks.MockIActivitySender
 	mockMetrics      *mocks.MockIMetrics
 	mockSummarizer   *mocks.MockISummarizer
+	mockRetrier      *mocks.MockISummaryRetrier
 }
 
 func setupFeedFollowerTest(t *testing.T) (*gomock.Controller, *feedFollowerHarness, logic.IFeedFollower) {
@@ -46,6 +47,7 @@ func setupFeedFollowerTest(t *testing.T) (*gomock.Controller, *feedFollowerHarne
 		mockSender:       mocks.NewMockIActivitySender(ctrl),
 		mockMetrics:      mocks.NewMockIMetrics(ctrl),
 		mockSummarizer:   mocks.NewMockISummarizer(ctrl),
+		mockRetrier:      mocks.NewMockISummaryRetrier(ctrl),
 	}
 	setupDummyLogger(h.mockLogger)
 	setupDummyMetrics(h.mockMetrics)
@@ -54,7 +56,7 @@ func setupFeedFollowerTest(t *testing.T) (*gomock.Controller, *feedFollowerHarne
 
 	ff := logic.NewFeedFollower(h.cfg, h.mockLogger, h.mockUserAgent, h.mockRepo,
 		h.mockBlockedFeeds, h.mockMessenger, h.mockTexts, h.mockKeyStore,
-		h.mockSender, h.mockMetrics, h.mockSummarizer)
+		h.mockSender, h.mockMetrics, h.mockSummarizer, h.mockRetrier)
 
 	return ctrl, h, ff
 }
