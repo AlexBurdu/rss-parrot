@@ -21,6 +21,7 @@ import (
 type MockIRepo struct {
 	ctrl     *gomock.Controller
 	recorder *MockIRepoMockRecorder
+	isgomock struct{}
 }
 
 // MockIRepoMockRecorder is the mock recorder for MockIRepo.
@@ -41,89 +42,207 @@ func (m *MockIRepo) EXPECT() *MockIRepoMockRecorder {
 }
 
 // AddAccountIfNotExist mocks base method.
-func (m *MockIRepo) AddAccountIfNotExist(arg0 *dal.Account, arg1 string) (bool, error) {
+func (m *MockIRepo) AddAccountIfNotExist(account *dal.Account, privKey string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddAccountIfNotExist", arg0, arg1)
+	ret := m.ctrl.Call(m, "AddAccountIfNotExist", account, privKey)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // AddAccountIfNotExist indicates an expected call of AddAccountIfNotExist.
-func (mr *MockIRepoMockRecorder) AddAccountIfNotExist(arg0, arg1 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) AddAccountIfNotExist(account, privKey any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAccountIfNotExist", reflect.TypeOf((*MockIRepo)(nil).AddAccountIfNotExist), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAccountIfNotExist", reflect.TypeOf((*MockIRepo)(nil).AddAccountIfNotExist), account, privKey)
 }
 
 // AddFeedPostIfNew mocks base method.
-func (m *MockIRepo) AddFeedPostIfNew(arg0 int, arg1 *dal.FeedPost) (bool, error) {
+func (m *MockIRepo) AddFeedPostIfNew(accountId int, post *dal.FeedPost) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddFeedPostIfNew", arg0, arg1)
+	ret := m.ctrl.Call(m, "AddFeedPostIfNew", accountId, post)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // AddFeedPostIfNew indicates an expected call of AddFeedPostIfNew.
-func (mr *MockIRepoMockRecorder) AddFeedPostIfNew(arg0, arg1 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) AddFeedPostIfNew(accountId, post any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddFeedPostIfNew", reflect.TypeOf((*MockIRepo)(nil).AddFeedPostIfNew), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddFeedPostIfNew", reflect.TypeOf((*MockIRepo)(nil).AddFeedPostIfNew), accountId, post)
 }
 
 // AddFollower mocks base method.
-func (m *MockIRepo) AddFollower(arg0 string, arg1 *dal.FollowerInfo) error {
+func (m *MockIRepo) AddFollower(user string, follower *dal.FollowerInfo) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddFollower", arg0, arg1)
+	ret := m.ctrl.Call(m, "AddFollower", user, follower)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddFollower indicates an expected call of AddFollower.
-func (mr *MockIRepoMockRecorder) AddFollower(arg0, arg1 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) AddFollower(user, follower any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddFollower", reflect.TypeOf((*MockIRepo)(nil).AddFollower), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddFollower", reflect.TypeOf((*MockIRepo)(nil).AddFollower), user, follower)
+}
+
+// AddPendingSummaryIfNew mocks base method.
+func (m *MockIRepo) AddPendingSummaryIfNew(ps *dal.PendingSummary) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddPendingSummaryIfNew", ps)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddPendingSummaryIfNew indicates an expected call of AddPendingSummaryIfNew.
+func (mr *MockIRepoMockRecorder) AddPendingSummaryIfNew(ps any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPendingSummaryIfNew", reflect.TypeOf((*MockIRepo)(nil).AddPendingSummaryIfNew), ps)
 }
 
 // AddToot mocks base method.
-func (m *MockIRepo) AddToot(arg0 int, arg1 *dal.Toot) error {
+func (m *MockIRepo) AddToot(accountId int, toot *dal.Toot) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddToot", arg0, arg1)
+	ret := m.ctrl.Call(m, "AddToot", accountId, toot)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddToot indicates an expected call of AddToot.
-func (mr *MockIRepoMockRecorder) AddToot(arg0, arg1 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) AddToot(accountId, toot any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddToot", reflect.TypeOf((*MockIRepo)(nil).AddToot), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddToot", reflect.TypeOf((*MockIRepo)(nil).AddToot), accountId, toot)
 }
 
 // AddTootQueueItem mocks base method.
-func (m *MockIRepo) AddTootQueueItem(arg0 *dal.TootQueueItem) error {
+func (m *MockIRepo) AddTootQueueItem(tqi *dal.TootQueueItem) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddTootQueueItem", arg0)
+	ret := m.ctrl.Call(m, "AddTootQueueItem", tqi)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddTootQueueItem indicates an expected call of AddTootQueueItem.
-func (mr *MockIRepoMockRecorder) AddTootQueueItem(arg0 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) AddTootQueueItem(tqi any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTootQueueItem", reflect.TypeOf((*MockIRepo)(nil).AddTootQueueItem), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTootQueueItem", reflect.TypeOf((*MockIRepo)(nil).AddTootQueueItem), tqi)
 }
 
 // BruteDeleteAccount mocks base method.
-func (m *MockIRepo) BruteDeleteAccount(arg0 int) error {
+func (m *MockIRepo) BruteDeleteAccount(accountId int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BruteDeleteAccount", arg0)
+	ret := m.ctrl.Call(m, "BruteDeleteAccount", accountId)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // BruteDeleteAccount indicates an expected call of BruteDeleteAccount.
-func (mr *MockIRepoMockRecorder) BruteDeleteAccount(arg0 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) BruteDeleteAccount(accountId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BruteDeleteAccount", reflect.TypeOf((*MockIRepo)(nil).BruteDeleteAccount), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BruteDeleteAccount", reflect.TypeOf((*MockIRepo)(nil).BruteDeleteAccount), accountId)
+}
+
+// DeleteHandledActivities mocks base method.
+func (m *MockIRepo) DeleteHandledActivities(before time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteHandledActivities", before)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteHandledActivities indicates an expected call of DeleteHandledActivities.
+func (mr *MockIRepoMockRecorder) DeleteHandledActivities(before any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteHandledActivities", reflect.TypeOf((*MockIRepo)(nil).DeleteHandledActivities), before)
+}
+
+// DeleteTootQueueItem mocks base method.
+func (m *MockIRepo) DeleteTootQueueItem(id int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteTootQueueItem", id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteTootQueueItem indicates an expected call of DeleteTootQueueItem.
+func (mr *MockIRepoMockRecorder) DeleteTootQueueItem(id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTootQueueItem", reflect.TypeOf((*MockIRepo)(nil).DeleteTootQueueItem), id)
+}
+
+// DoesAccountExist mocks base method.
+func (m *MockIRepo) DoesAccountExist(user string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DoesAccountExist", user)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DoesAccountExist indicates an expected call of DoesAccountExist.
+func (mr *MockIRepoMockRecorder) DoesAccountExist(user any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoesAccountExist", reflect.TypeOf((*MockIRepo)(nil).DoesAccountExist), user)
+}
+
+// FinishPendingSummary mocks base method.
+func (m *MockIRepo) FinishPendingSummary(statusId string, state dal.PendingSummaryState) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FinishPendingSummary", statusId, state)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// FinishPendingSummary indicates an expected call of FinishPendingSummary.
+func (mr *MockIRepoMockRecorder) FinishPendingSummary(statusId, state any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinishPendingSummary", reflect.TypeOf((*MockIRepo)(nil).FinishPendingSummary), statusId, state)
+}
+
+// GetAccount mocks base method.
+func (m *MockIRepo) GetAccount(user string) (*dal.Account, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAccount", user)
+	ret0, _ := ret[0].(*dal.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAccount indicates an expected call of GetAccount.
+func (mr *MockIRepoMockRecorder) GetAccount(user any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockIRepo)(nil).GetAccount), user)
+}
+
+// GetAccountToCheck mocks base method.
+func (m *MockIRepo) GetAccountToCheck(checkDue time.Time) (*dal.Account, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAccountToCheck", checkDue)
+	ret0, _ := ret[0].(*dal.Account)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetAccountToCheck indicates an expected call of GetAccountToCheck.
+func (mr *MockIRepoMockRecorder) GetAccountToCheck(checkDue any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountToCheck", reflect.TypeOf((*MockIRepo)(nil).GetAccountToCheck), checkDue)
+}
+
+// GetAccountsPage mocks base method.
+func (m *MockIRepo) GetAccountsPage(offset, limit int) ([]*dal.Account, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAccountsPage", offset, limit)
+	ret0, _ := ret[0].([]*dal.Account)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetAccountsPage indicates an expected call of GetAccountsPage.
+func (mr *MockIRepoMockRecorder) GetAccountsPage(offset, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountsPage", reflect.TypeOf((*MockIRepo)(nil).GetAccountsPage), offset, limit)
 }
 
 // GetDistinctSharedInboxes mocks base method.
@@ -139,96 +258,6 @@ func (m *MockIRepo) GetDistinctSharedInboxes() ([]string, error) {
 func (mr *MockIRepoMockRecorder) GetDistinctSharedInboxes() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDistinctSharedInboxes", reflect.TypeOf((*MockIRepo)(nil).GetDistinctSharedInboxes))
-}
-
-// DeleteHandledActivities mocks base method.
-func (m *MockIRepo) DeleteHandledActivities(arg0 time.Time) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteHandledActivities", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteHandledActivities indicates an expected call of DeleteHandledActivities.
-func (mr *MockIRepoMockRecorder) DeleteHandledActivities(arg0 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteHandledActivities", reflect.TypeOf((*MockIRepo)(nil).DeleteHandledActivities), arg0)
-}
-
-// DeleteTootQueueItem mocks base method.
-func (m *MockIRepo) DeleteTootQueueItem(arg0 int) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteTootQueueItem", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteTootQueueItem indicates an expected call of DeleteTootQueueItem.
-func (mr *MockIRepoMockRecorder) DeleteTootQueueItem(arg0 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTootQueueItem", reflect.TypeOf((*MockIRepo)(nil).DeleteTootQueueItem), arg0)
-}
-
-// DoesAccountExist mocks base method.
-func (m *MockIRepo) DoesAccountExist(arg0 string) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DoesAccountExist", arg0)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DoesAccountExist indicates an expected call of DoesAccountExist.
-func (mr *MockIRepoMockRecorder) DoesAccountExist(arg0 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoesAccountExist", reflect.TypeOf((*MockIRepo)(nil).DoesAccountExist), arg0)
-}
-
-// GetAccount mocks base method.
-func (m *MockIRepo) GetAccount(arg0 string) (*dal.Account, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAccount", arg0)
-	ret0, _ := ret[0].(*dal.Account)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAccount indicates an expected call of GetAccount.
-func (mr *MockIRepoMockRecorder) GetAccount(arg0 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockIRepo)(nil).GetAccount), arg0)
-}
-
-// GetAccountToCheck mocks base method.
-func (m *MockIRepo) GetAccountToCheck(arg0 time.Time) (*dal.Account, int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAccountToCheck", arg0)
-	ret0, _ := ret[0].(*dal.Account)
-	ret1, _ := ret[1].(int)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetAccountToCheck indicates an expected call of GetAccountToCheck.
-func (mr *MockIRepoMockRecorder) GetAccountToCheck(arg0 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountToCheck", reflect.TypeOf((*MockIRepo)(nil).GetAccountToCheck), arg0)
-}
-
-// GetAccountsPage mocks base method.
-func (m *MockIRepo) GetAccountsPage(arg0, arg1 int) ([]*dal.Account, int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAccountsPage", arg0, arg1)
-	ret0, _ := ret[0].([]*dal.Account)
-	ret1, _ := ret[1].(int)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetAccountsPage indicates an expected call of GetAccountsPage.
-func (mr *MockIRepoMockRecorder) GetAccountsPage(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountsPage", reflect.TypeOf((*MockIRepo)(nil).GetAccountsPage), arg0, arg1)
 }
 
 // GetFeedFollowerCount mocks base method.
@@ -247,63 +276,63 @@ func (mr *MockIRepoMockRecorder) GetFeedFollowerCount() *gomock.Call {
 }
 
 // GetFeedLastUpdated mocks base method.
-func (m *MockIRepo) GetFeedLastUpdated(arg0 int) (time.Time, error) {
+func (m *MockIRepo) GetFeedLastUpdated(accountId int) (time.Time, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFeedLastUpdated", arg0)
+	ret := m.ctrl.Call(m, "GetFeedLastUpdated", accountId)
 	ret0, _ := ret[0].(time.Time)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetFeedLastUpdated indicates an expected call of GetFeedLastUpdated.
-func (mr *MockIRepoMockRecorder) GetFeedLastUpdated(arg0 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) GetFeedLastUpdated(accountId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFeedLastUpdated", reflect.TypeOf((*MockIRepo)(nil).GetFeedLastUpdated), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFeedLastUpdated", reflect.TypeOf((*MockIRepo)(nil).GetFeedLastUpdated), accountId)
 }
 
 // GetFollowerCount mocks base method.
-func (m *MockIRepo) GetFollowerCount(arg0 string, arg1 bool) (uint, error) {
+func (m *MockIRepo) GetFollowerCount(user string, onlyApproved bool) (uint, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFollowerCount", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetFollowerCount", user, onlyApproved)
 	ret0, _ := ret[0].(uint)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetFollowerCount indicates an expected call of GetFollowerCount.
-func (mr *MockIRepoMockRecorder) GetFollowerCount(arg0, arg1 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) GetFollowerCount(user, onlyApproved any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFollowerCount", reflect.TypeOf((*MockIRepo)(nil).GetFollowerCount), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFollowerCount", reflect.TypeOf((*MockIRepo)(nil).GetFollowerCount), user, onlyApproved)
 }
 
 // GetFollowersById mocks base method.
-func (m *MockIRepo) GetFollowersById(arg0 int, arg1 bool) ([]*dal.FollowerInfo, error) {
+func (m *MockIRepo) GetFollowersById(accountId int, onlyApproved bool) ([]*dal.FollowerInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFollowersById", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetFollowersById", accountId, onlyApproved)
 	ret0, _ := ret[0].([]*dal.FollowerInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetFollowersById indicates an expected call of GetFollowersById.
-func (mr *MockIRepoMockRecorder) GetFollowersById(arg0, arg1 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) GetFollowersById(accountId, onlyApproved any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFollowersById", reflect.TypeOf((*MockIRepo)(nil).GetFollowersById), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFollowersById", reflect.TypeOf((*MockIRepo)(nil).GetFollowersById), accountId, onlyApproved)
 }
 
 // GetFollowersByUser mocks base method.
-func (m *MockIRepo) GetFollowersByUser(arg0 string, arg1 bool) ([]*dal.FollowerInfo, error) {
+func (m *MockIRepo) GetFollowersByUser(user string, onlyApproved bool) ([]*dal.FollowerInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFollowersByUser", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetFollowersByUser", user, onlyApproved)
 	ret0, _ := ret[0].([]*dal.FollowerInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetFollowersByUser indicates an expected call of GetFollowersByUser.
-func (mr *MockIRepoMockRecorder) GetFollowersByUser(arg0, arg1 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) GetFollowersByUser(user, onlyApproved any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFollowersByUser", reflect.TypeOf((*MockIRepo)(nil).GetFollowersByUser), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFollowersByUser", reflect.TypeOf((*MockIRepo)(nil).GetFollowersByUser), user, onlyApproved)
 }
 
 // GetNextId mocks base method.
@@ -320,85 +349,100 @@ func (mr *MockIRepoMockRecorder) GetNextId() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNextId", reflect.TypeOf((*MockIRepo)(nil).GetNextId))
 }
 
-// GetPostCount mocks base method.
-func (m *MockIRepo) GetPostCount(arg0 string) (uint, error) {
+// GetPendingSummaryToRetry mocks base method.
+func (m *MockIRepo) GetPendingSummaryToRetry(due time.Time) (*dal.PendingSummary, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPostCount", arg0)
+	ret := m.ctrl.Call(m, "GetPendingSummaryToRetry", due)
+	ret0, _ := ret[0].(*dal.PendingSummary)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPendingSummaryToRetry indicates an expected call of GetPendingSummaryToRetry.
+func (mr *MockIRepoMockRecorder) GetPendingSummaryToRetry(due any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingSummaryToRetry", reflect.TypeOf((*MockIRepo)(nil).GetPendingSummaryToRetry), due)
+}
+
+// GetPostCount mocks base method.
+func (m *MockIRepo) GetPostCount(user string) (uint, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPostCount", user)
 	ret0, _ := ret[0].(uint)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPostCount indicates an expected call of GetPostCount.
-func (mr *MockIRepoMockRecorder) GetPostCount(arg0 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) GetPostCount(user any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPostCount", reflect.TypeOf((*MockIRepo)(nil).GetPostCount), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPostCount", reflect.TypeOf((*MockIRepo)(nil).GetPostCount), user)
 }
 
 // GetPostsPage mocks base method.
-func (m *MockIRepo) GetPostsPage(arg0, arg1, arg2 int) ([]*dal.FeedPost, error) {
+func (m *MockIRepo) GetPostsPage(accountId, offset, limit int) ([]*dal.FeedPost, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPostsPage", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "GetPostsPage", accountId, offset, limit)
 	ret0, _ := ret[0].([]*dal.FeedPost)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPostsPage indicates an expected call of GetPostsPage.
-func (mr *MockIRepoMockRecorder) GetPostsPage(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) GetPostsPage(accountId, offset, limit any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPostsPage", reflect.TypeOf((*MockIRepo)(nil).GetPostsPage), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPostsPage", reflect.TypeOf((*MockIRepo)(nil).GetPostsPage), accountId, offset, limit)
 }
 
 // GetPrivKey mocks base method.
-func (m *MockIRepo) GetPrivKey(arg0 string) (string, error) {
+func (m *MockIRepo) GetPrivKey(user string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPrivKey", arg0)
+	ret := m.ctrl.Call(m, "GetPrivKey", user)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPrivKey indicates an expected call of GetPrivKey.
-func (mr *MockIRepoMockRecorder) GetPrivKey(arg0 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) GetPrivKey(user any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPrivKey", reflect.TypeOf((*MockIRepo)(nil).GetPrivKey), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPrivKey", reflect.TypeOf((*MockIRepo)(nil).GetPrivKey), user)
 }
 
 // GetToot mocks base method.
-func (m *MockIRepo) GetToot(arg0 string) (*dal.Toot, error) {
+func (m *MockIRepo) GetToot(statusId string) (*dal.Toot, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetToot", arg0)
+	ret := m.ctrl.Call(m, "GetToot", statusId)
 	ret0, _ := ret[0].(*dal.Toot)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetToot indicates an expected call of GetToot.
-func (mr *MockIRepoMockRecorder) GetToot(arg0 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) GetToot(statusId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetToot", reflect.TypeOf((*MockIRepo)(nil).GetToot), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetToot", reflect.TypeOf((*MockIRepo)(nil).GetToot), statusId)
 }
 
 // GetTootExtracts mocks base method.
-func (m *MockIRepo) GetTootExtracts(arg0 int) ([]*dal.Toot, error) {
+func (m *MockIRepo) GetTootExtracts(accountId int) ([]*dal.Toot, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTootExtracts", arg0)
+	ret := m.ctrl.Call(m, "GetTootExtracts", accountId)
 	ret0, _ := ret[0].([]*dal.Toot)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetTootExtracts indicates an expected call of GetTootExtracts.
-func (mr *MockIRepoMockRecorder) GetTootExtracts(arg0 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) GetTootExtracts(accountId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTootExtracts", reflect.TypeOf((*MockIRepo)(nil).GetTootExtracts), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTootExtracts", reflect.TypeOf((*MockIRepo)(nil).GetTootExtracts), accountId)
 }
 
 // GetTootQueueItems mocks base method.
-func (m *MockIRepo) GetTootQueueItems(arg0, arg1 int) ([]*dal.TootQueueItem, int, error) {
+func (m *MockIRepo) GetTootQueueItems(aboveId, maxCount int) ([]*dal.TootQueueItem, int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTootQueueItems", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetTootQueueItems", aboveId, maxCount)
 	ret0, _ := ret[0].([]*dal.TootQueueItem)
 	ret1, _ := ret[1].(int)
 	ret2, _ := ret[2].(error)
@@ -406,9 +450,9 @@ func (m *MockIRepo) GetTootQueueItems(arg0, arg1 int) ([]*dal.TootQueueItem, int
 }
 
 // GetTootQueueItems indicates an expected call of GetTootQueueItems.
-func (mr *MockIRepoMockRecorder) GetTootQueueItems(arg0, arg1 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) GetTootQueueItems(aboveId, maxCount any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTootQueueItems", reflect.TypeOf((*MockIRepo)(nil).GetTootQueueItems), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTootQueueItems", reflect.TypeOf((*MockIRepo)(nil).GetTootQueueItems), aboveId, maxCount)
 }
 
 // GetTotalPostCount mocks base method.
@@ -439,74 +483,102 @@ func (mr *MockIRepoMockRecorder) InitUpdateDb() *gomock.Call {
 }
 
 // MarkActivityHandled mocks base method.
-func (m *MockIRepo) MarkActivityHandled(arg0 string, arg1 time.Time) (bool, error) {
+func (m *MockIRepo) MarkActivityHandled(id string, when time.Time) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkActivityHandled", arg0, arg1)
+	ret := m.ctrl.Call(m, "MarkActivityHandled", id, when)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // MarkActivityHandled indicates an expected call of MarkActivityHandled.
-func (mr *MockIRepoMockRecorder) MarkActivityHandled(arg0, arg1 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) MarkActivityHandled(id, when any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkActivityHandled", reflect.TypeOf((*MockIRepo)(nil).MarkActivityHandled), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkActivityHandled", reflect.TypeOf((*MockIRepo)(nil).MarkActivityHandled), id, when)
 }
 
 // PurgePostsAndToots mocks base method.
-func (m *MockIRepo) PurgePostsAndToots(arg0 int, arg1 time.Time) error {
+func (m *MockIRepo) PurgePostsAndToots(accountId int, fromBefore time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PurgePostsAndToots", arg0, arg1)
+	ret := m.ctrl.Call(m, "PurgePostsAndToots", accountId, fromBefore)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // PurgePostsAndToots indicates an expected call of PurgePostsAndToots.
-func (mr *MockIRepoMockRecorder) PurgePostsAndToots(arg0, arg1 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) PurgePostsAndToots(accountId, fromBefore any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PurgePostsAndToots", reflect.TypeOf((*MockIRepo)(nil).PurgePostsAndToots), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PurgePostsAndToots", reflect.TypeOf((*MockIRepo)(nil).PurgePostsAndToots), accountId, fromBefore)
 }
 
 // RemoveFollower mocks base method.
-func (m *MockIRepo) RemoveFollower(arg0, arg1 string) error {
+func (m *MockIRepo) RemoveFollower(user, followerUserUrl string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveFollower", arg0, arg1)
+	ret := m.ctrl.Call(m, "RemoveFollower", user, followerUserUrl)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveFollower indicates an expected call of RemoveFollower.
-func (mr *MockIRepoMockRecorder) RemoveFollower(arg0, arg1 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) RemoveFollower(user, followerUserUrl any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFollower", reflect.TypeOf((*MockIRepo)(nil).RemoveFollower), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFollower", reflect.TypeOf((*MockIRepo)(nil).RemoveFollower), user, followerUserUrl)
+}
+
+// ReschedulePendingSummary mocks base method.
+func (m *MockIRepo) ReschedulePendingSummary(statusId string, attempts int, nextRetryDue time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReschedulePendingSummary", statusId, attempts, nextRetryDue)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReschedulePendingSummary indicates an expected call of ReschedulePendingSummary.
+func (mr *MockIRepoMockRecorder) ReschedulePendingSummary(statusId, attempts, nextRetryDue any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReschedulePendingSummary", reflect.TypeOf((*MockIRepo)(nil).ReschedulePendingSummary), statusId, attempts, nextRetryDue)
 }
 
 // SetFollowerApproveStatus mocks base method.
-func (m *MockIRepo) SetFollowerApproveStatus(arg0, arg1 string, arg2 int) error {
+func (m *MockIRepo) SetFollowerApproveStatus(user, followerUserUrl string, status int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetFollowerApproveStatus", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "SetFollowerApproveStatus", user, followerUserUrl, status)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SetFollowerApproveStatus indicates an expected call of SetFollowerApproveStatus.
-func (mr *MockIRepoMockRecorder) SetFollowerApproveStatus(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) SetFollowerApproveStatus(user, followerUserUrl, status any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetFollowerApproveStatus", reflect.TypeOf((*MockIRepo)(nil).SetFollowerApproveStatus), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetFollowerApproveStatus", reflect.TypeOf((*MockIRepo)(nil).SetFollowerApproveStatus), user, followerUserUrl, status)
 }
 
 // UpdateAccountFeedTimes mocks base method.
-func (m *MockIRepo) UpdateAccountFeedTimes(arg0 int, arg1, arg2 time.Time) error {
+func (m *MockIRepo) UpdateAccountFeedTimes(accountId int, lastUpdated, nextCheckDue time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAccountFeedTimes", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "UpdateAccountFeedTimes", accountId, lastUpdated, nextCheckDue)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateAccountFeedTimes indicates an expected call of UpdateAccountFeedTimes.
-func (mr *MockIRepoMockRecorder) UpdateAccountFeedTimes(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockIRepoMockRecorder) UpdateAccountFeedTimes(accountId, lastUpdated, nextCheckDue any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAccountFeedTimes", reflect.TypeOf((*MockIRepo)(nil).UpdateAccountFeedTimes), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAccountFeedTimes", reflect.TypeOf((*MockIRepo)(nil).UpdateAccountFeedTimes), accountId, lastUpdated, nextCheckDue)
+}
+
+// UpdateTootContent mocks base method.
+func (m *MockIRepo) UpdateTootContent(statusId, content string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateTootContent", statusId, content)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateTootContent indicates an expected call of UpdateTootContent.
+func (mr *MockIRepoMockRecorder) UpdateTootContent(statusId, content any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTootContent", reflect.TypeOf((*MockIRepo)(nil).UpdateTootContent), statusId, content)
 }
 
 // Vacuum mocks base method.

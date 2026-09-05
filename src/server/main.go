@@ -48,6 +48,7 @@ func main() {
 			logic.NewBlockedFeeds,
 			logic.NewMetrics,
 			logic.NewSummarizer,
+			logic.NewSummaryRetrier,
 			logic.NewFeedFollower,
 			logic.NewUserDirectory,
 			logic.NewActivitySender,
@@ -67,7 +68,9 @@ func main() {
 			registerHooks,
 			func(repo dal.IRepo) { repo.InitUpdateDb() },
 			func(prof logic.IProfiler) {}, // Needed so profiler gets instantiated
-			func(*http.Server) {},         // Needed so server gets instantiated
+			func(ff logic.IFeedFollower) { ff.Start() },
+			func(sr logic.ISummaryRetrier) { sr.Start() },
+			func(*http.Server) {}, // Needed so server gets instantiated
 			test,
 		),
 		fx.ErrorHook(&initErrorHandler{}),

@@ -4,12 +4,42 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"html"
 	"net/url"
 	"strings"
 	"unicode"
 )
 
 const MaxDescriptionLen = 256
+
+// summaryAnchor closes the article-link paragraph of
+// the toot_new_post.html snippet. The AI summary goes
+// straight after it, i.e. between the link and the
+// feed description.
+const summaryAnchor = "</a></p>"
+
+// InsertSummaryHtml returns tootContent with summary
+// added as an italicised paragraph after the article
+// link. The summary is HTML-escaped, because the toot
+// content is already-rendered HTML.
+//
+// Returns tootContent unchanged when summary is empty
+// or the anchor paragraph is absent, so a template
+// change can never corrupt a toot.
+func InsertSummaryHtml(tootContent, summary string) string {
+	summary = strings.TrimSpace(summary)
+	if summary == "" {
+		return tootContent
+	}
+	ix := strings.Index(tootContent, summaryAnchor)
+	if ix < 0 {
+		return tootContent
+	}
+	cut := ix + len(summaryAnchor)
+	return tootContent[:cut] +
+		"<p><em>" + html.EscapeString(summary) + "</em></p>" +
+		tootContent[cut:]
+}
 
 func GetHostName(userUrl string) (string, error) {
 	var parsedUrl *url.URL

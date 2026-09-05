@@ -43,6 +43,12 @@ const (
 )
 
 type IFeedFollower interface {
+	// Start launches the background feed check loop.
+	// Called once at startup, and deliberately not from
+	// the constructor: a loop that starts itself races
+	// every test that only wants to build the object.
+	Start()
+
 	GetAccountForFeed(urlStr string) (acct *dal.Account, status FeedStatus, err error)
 	PurgeOldPosts(acct *dal.Account, minCount, minAgeDays int) error
 }
@@ -69,6 +75,7 @@ type feedFollower struct {
 	sender               IActivitySender
 	metrics              IMetrics
 	summarizer           ISummarizer
+	summaryRetrier       ISummaryRetrier
 	lastCheckedPostCount time.Time
 	muPurgingOldPosts    sync.Mutex
 	isPurgingOldPosts    bool
@@ -88,6 +95,7 @@ func NewFeedFollower(
 	sender IActivitySender,
 	metrics IMetrics,
 	summarizer ISummarizer,
+	summaryRetrier ISummaryRetrier,
 ) IFeedFollower {
 
 	ff := feedFollower{
@@ -102,14 +110,18 @@ func NewFeedFollower(
 		sender:              sender,
 		metrics:             metrics,
 		summarizer:          summarizer,
+		summaryRetrier:      summaryRetrier,
 		isPurgingUnfollowed: false,
 	}
 
 	ff.updateDBSizeMetric()
 	ff.updateTotalPostsMetric()
-	go ff.feedCheckLoop()
 
 	return &ff
+}
+
+func (ff *feedFollower) Start() {
+	go ff.feedCheckLoop()
 }
 
 func (ff *feedFollower) getFeedUrl(siteUrl *url.URL, doc *goquery.Document) string {
@@ -635,12 +647,11 @@ func (ff *feedFollower) createToot(accountId int, accountHandle string, itm *gof
 	plainDescription = shared.TruncateWithEllipsis(
 		plainDescription, shared.MaxDescriptionLen)
 	// Generate AI summary from article text
-	summary := ""
 	articleText := plainTitle + ". " + plainDescription
 	if itm.Content != "" {
 		articleText = stripHtml(itm.Content)
 	}
-	summary = ff.summarizer.Summarize(articleText)
+	summary := ff.summarizer.Summarize(articleText)
 	content := ff.txt.WithVals(
 		"toot_new_post.html", map[string]string{
 			"title":       plainTitle,
@@ -648,17 +659,11 @@ func (ff *feedFollower) createToot(accountId int, accountHandle string, itm *gof
 			"prettyUrl":   prettyUrl,
 			"description": plainDescription,
 		})
-	// Insert AI summary before description paragraph.
-	// Done outside the template to avoid HTML escaping.
-	if summary != "" {
-		summaryHtml := "<p><em>" +
-			html.EscapeString(summary) + "</em></p>"
-		content = strings.Replace(content,
-			"<p>"+html.EscapeString(plainDescription),
-			summaryHtml+"<p>"+
-				html.EscapeString(plainDescription),
-			1)
-	}
+	// Insert AI summary after the article link, before
+	// the description paragraph. Done outside the
+	// template because the template escapes its values
+	// and the summary markup must survive.
+	content = shared.InsertSummaryHtml(content, summary)
 	idb := shared.IdBuilder{ff.cfg.Host}
 	id := ff.repo.GetNextId()
 	statusId := idb.UserStatus(accountHandle, id)
@@ -671,6 +676,13 @@ func (ff *feedFollower) createToot(accountId int, accountHandle string, itm *gof
 	})
 	if err != nil {
 		return err
+	}
+	// Ollama may be down or too slow; the toot still
+	// goes out now, and the article joins the retry
+	// queue so a later attempt can fill the summary in.
+	if strings.TrimSpace(summary) == "" {
+		ff.summaryRetrier.QueueForRetry(
+			accountId, statusId, articleText, tootedAt)
 	}
 	if sendToot {
 		if err = ff.messenger.EnqueueBroadcast(accountHandle, statusId, tootedAt, content); err != nil {
