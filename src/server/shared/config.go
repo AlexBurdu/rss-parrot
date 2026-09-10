@@ -35,6 +35,10 @@ type Config struct {
 	AllowedHosts       []string       `json:"allowed_hosts"`
 	OllamaUrl          string         `json:"ollama_url"`
 	OllamaModel        string         `json:"ollama_model"`
+	// ExtractFullText turns on downloading an article's
+	// own page to summarize, for feed items that carry
+	// only a short teaser.
+	ExtractFullText bool `json:"extract_full_text"`
 }
 
 type UpdateSchedule struct {

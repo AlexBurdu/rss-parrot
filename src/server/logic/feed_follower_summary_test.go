@@ -54,12 +54,35 @@ func (m *fakeTootMessenger) EnqueueBroadcast(
 }
 
 type fakeSummarizer struct {
-	result string
+	result   string
+	disabled bool
+	// lastText is what createToot decided to summarize,
+	// which is how the article-text tests below see
+	// which source won.
+	lastText string
 }
 
-func (s *fakeSummarizer) Summarize(title, text string) string { return s.result }
-func (s *fakeSummarizer) IsEnabled() bool                     { return true }
-func (s *fakeSummarizer) TrimForSummary(text string) string   { return text }
+func (s *fakeSummarizer) Summarize(title, text string) string {
+	s.lastText = text
+	return s.result
+}
+
+func (s *fakeSummarizer) IsEnabled() bool                   { return !s.disabled }
+func (s *fakeSummarizer) TrimForSummary(text string) string { return text }
+
+type fakeExtractor struct {
+	result    string
+	askedFor  string
+	callCount int
+}
+
+func (e *fakeExtractor) IsEnabled() bool { return true }
+
+func (e *fakeExtractor) Extract(articleUrl string) string {
+	e.callCount++
+	e.askedFor = articleUrl
+	return e.result
+}
 
 type fakeRetrier struct {
 	ISummaryRetrier
@@ -78,21 +101,34 @@ func (r *fakeRetrier) QueueForRetry(
 	r.queuedArticleText = articleText
 }
 
+type createTootFakes struct {
+	repo       *fakeTootRepo
+	retrier    *fakeRetrier
+	messenger  *fakeTootMessenger
+	summarizer *fakeSummarizer
+	extractor  *fakeExtractor
+}
+
 func setupCreateTootTest(summary string) (
-	*feedFollower, *fakeTootRepo, *fakeRetrier, *fakeTootMessenger,
+	*feedFollower, *createTootFakes,
 ) {
-	repo := &fakeTootRepo{}
-	retrier := &fakeRetrier{}
-	messenger := &fakeTootMessenger{}
+	f := &createTootFakes{
+		repo:       &fakeTootRepo{},
+		retrier:    &fakeRetrier{},
+		messenger:  &fakeTootMessenger{},
+		summarizer: &fakeSummarizer{result: summary},
+		extractor:  &fakeExtractor{},
+	}
 	ff := &feedFollower{
 		cfg:            &shared.Config{Host: "parrot.test"},
-		repo:           repo,
-		messenger:      messenger,
+		repo:           f.repo,
+		messenger:      f.messenger,
 		txt:            &fakeTootTexts{},
-		summarizer:     &fakeSummarizer{result: summary},
-		summaryRetrier: retrier,
+		extractor:      f.extractor,
+		summarizer:     f.summarizer,
+		summaryRetrier: f.retrier,
 	}
-	return ff, repo, retrier, messenger
+	return ff, f
 }
 
 func tootTestItem() *gofeed.Item {
@@ -107,31 +143,95 @@ func tootTestItem() *gofeed.Item {
 
 func Test_CreateToot_SummaryPresent_NothingQueued(t *testing.T) {
 
-	ff, repo, retrier, messenger := setupCreateTootTest("A summary.")
+	ff, f := setupCreateTootTest("A summary.")
 
 	err := ff.createToot(7, "x.test", tootTestItem(), true)
 
 	assert.NoError(t, err)
-	assert.NotNil(t, repo.added)
-	assert.Contains(t, repo.added.Content, "<p><em>A summary.</em></p>")
-	assert.Equal(t, 0, retrier.queueCount)
-	assert.Equal(t, 1, messenger.broadcasts)
+	assert.NotNil(t, f.repo.added)
+	assert.Contains(t, f.repo.added.Content, "<p><em>A summary.</em></p>")
+	assert.Equal(t, 0, f.retrier.queueCount)
+	assert.Equal(t, 1, f.messenger.broadcasts)
 }
 
 func Test_CreateToot_SummaryMissing_QueuesRetryAndStillPosts(t *testing.T) {
 
-	ff, repo, retrier, messenger := setupCreateTootTest("")
+	ff, f := setupCreateTootTest("")
 
 	err := ff.createToot(7, "x.test", tootTestItem(), true)
 
 	assert.NoError(t, err)
 	// The toot goes out right away, without a summary.
-	assert.NotNil(t, repo.added)
-	assert.NotContains(t, repo.added.Content, "<em>")
-	assert.Equal(t, 1, messenger.broadcasts)
+	assert.NotNil(t, f.repo.added)
+	assert.NotContains(t, f.repo.added.Content, "<em>")
+	assert.Equal(t, 1, f.messenger.broadcasts)
 	// ...and the article is queued for a later retry.
-	assert.Equal(t, 1, retrier.queueCount)
-	assert.Equal(t, repo.added.StatusId, retrier.queuedStatusId)
-	assert.Equal(t, "The Title", retrier.queuedTitle)
-	assert.Equal(t, "The full article body.", retrier.queuedArticleText)
+	assert.Equal(t, 1, f.retrier.queueCount)
+	assert.Equal(t, f.repo.added.StatusId, f.retrier.queuedStatusId)
+	assert.Equal(t, "The Title", f.retrier.queuedTitle)
+	assert.Equal(t, "The full article body.", f.retrier.queuedArticleText)
+}
+
+func Test_CreateToot_FeedWithContent_IsNotDownloaded(t *testing.T) {
+
+	ff, f := setupCreateTootTest("A summary.")
+	f.extractor.result = "Extracted body text."
+
+	err := ff.createToot(7, "x.test", tootTestItem(), true)
+
+	assert.NoError(t, err)
+	// The feed already carries the whole article, so
+	// there is nothing to go and fetch.
+	assert.Equal(t, 0, f.extractor.callCount)
+	assert.Equal(t, "The full article body.", f.summarizer.lastText)
+}
+
+func Test_CreateToot_ExcerptOnlyFeed_SummarizesExtractedText(t *testing.T) {
+
+	ff, f := setupCreateTootTest("A summary.")
+	f.extractor.result = "Extracted body text."
+	itm := tootTestItem()
+	itm.Content = ""
+
+	err := ff.createToot(7, "x.test", itm, true)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, f.extractor.callCount)
+	assert.Equal(t, itm.Link, f.extractor.askedFor)
+	assert.Equal(t,
+		"Extracted body text.", f.summarizer.lastText)
+}
+
+func Test_CreateToot_ExtractionFails_FallsBackToDescription(t *testing.T) {
+
+	ff, f := setupCreateTootTest("A summary.")
+	f.extractor.result = ""
+	itm := tootTestItem()
+	itm.Content = ""
+
+	err := ff.createToot(7, "x.test", itm, true)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, f.extractor.callCount)
+	// The teaser is still better than nothing, and the
+	// toot goes out either way.
+	assert.Equal(t, "The description.", f.summarizer.lastText)
+	assert.NotNil(t, f.repo.added)
+}
+
+func Test_CreateToot_SummariesOff_NothingIsDownloaded(t *testing.T) {
+
+	ff, f := setupCreateTootTest("")
+	f.summarizer.disabled = true
+	f.extractor.result = "Extracted body text."
+	itm := tootTestItem()
+	itm.Content = ""
+
+	err := ff.createToot(7, "x.test", itm, true)
+
+	assert.NoError(t, err)
+	// Nobody would read the extracted text, so the
+	// article page is left alone.
+	assert.Equal(t, 0, f.extractor.callCount)
+	assert.NotNil(t, f.repo.added)
 }

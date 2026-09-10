@@ -74,6 +74,7 @@ type feedFollower struct {
 	keyStore             IKeyStore
 	sender               IActivitySender
 	metrics              IMetrics
+	extractor            IArticleExtractor
 	summarizer           ISummarizer
 	summaryRetrier       ISummaryRetrier
 	lastCheckedPostCount time.Time
@@ -94,6 +95,7 @@ func NewFeedFollower(
 	keyStore IKeyStore,
 	sender IActivitySender,
 	metrics IMetrics,
+	extractor IArticleExtractor,
 	summarizer ISummarizer,
 	summaryRetrier ISummaryRetrier,
 ) IFeedFollower {
@@ -109,6 +111,7 @@ func NewFeedFollower(
 		keyStore:            keyStore,
 		sender:              sender,
 		metrics:             metrics,
+		extractor:           extractor,
 		summarizer:          summarizer,
 		summaryRetrier:      summaryRetrier,
 		isPurgingUnfollowed: false,
@@ -637,6 +640,36 @@ func (ff *feedFollower) storePostIfNew(
 	return
 }
 
+// getArticleText assembles the text handed to the
+// summarizer, best source first. The title is passed to
+// the summarizer as its own argument, so it is not
+// prepended here.
+//
+// A feed that ships the whole article in <content> is
+// already giving us everything. A feed that ships only
+// a teaser is not, and for those the article's own page
+// is worth downloading — a two-line excerpt makes for a
+// summary that says nothing the headline did not.
+// Extraction is best-effort, so the teaser stays the
+// fallback.
+func (ff *feedFollower) getArticleText(
+	itm *gofeed.Item,
+	plainDescription string,
+) string {
+	if itm.Content != "" {
+		return stripHtml(itm.Content)
+	}
+	// With no summarizer configured this text is never
+	// read, so downloading a page to build it would be
+	// a request made for nothing.
+	if ff.summarizer.IsEnabled() {
+		if fullText := ff.extractor.Extract(itm.Link); fullText != "" {
+			return fullText
+		}
+	}
+	return plainDescription
+}
+
 func (ff *feedFollower) createToot(accountId int, accountHandle string, itm *gofeed.Item, sendToot bool) error {
 	prettyUrl := itm.Link
 	prettyUrl = strings.TrimPrefix(prettyUrl, "http://")
@@ -646,11 +679,7 @@ func (ff *feedFollower) createToot(accountId int, accountHandle string, itm *gof
 	plainDescription := stripHtml(itm.Description)
 	plainDescription = shared.TruncateWithEllipsis(
 		plainDescription, shared.MaxDescriptionLen)
-	// Generate AI summary from article text
-	articleText := plainDescription
-	if itm.Content != "" {
-		articleText = stripHtml(itm.Content)
-	}
+	articleText := ff.getArticleText(itm, plainDescription)
 	summary := ff.summarizer.Summarize(plainTitle, articleText)
 	content := ff.txt.WithVals(
 		"toot_new_post.html", map[string]string{
