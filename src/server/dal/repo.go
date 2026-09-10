@@ -13,7 +13,7 @@ import (
 
 //go:generate mockgen --build_flags=--mod=mod -destination ../test/mocks/mock_repo.go -package mocks rss_parrot/dal IRepo
 
-const schemaVer = 7
+const schemaVer = 8
 
 //go:embed scripts/*
 var scripts embed.FS
@@ -929,9 +929,9 @@ func (repo *Repo) AddPendingSummaryIfNew(ps *PendingSummary) error {
 	// toot is quietly dropped instead of duplicating
 	// work or resetting an exhausted retry count.
 	_, err := repo.db.Exec(`INSERT OR IGNORE INTO toot_summaries
-		(account_id, status_id, article_text, attempts, next_retry_due, state)
-		VALUES(?, ?, ?, ?, ?, ?)`,
-		ps.AccountId, ps.StatusId, ps.ArticleText, ps.Attempts,
+		(account_id, status_id, title, article_text, attempts, next_retry_due, state)
+		VALUES(?, ?, ?, ?, ?, ?, ?)`,
+		ps.AccountId, ps.StatusId, ps.Title, ps.ArticleText, ps.Attempts,
 		ps.NextRetryDue, ps.State)
 	return err
 }
@@ -941,7 +941,7 @@ func (repo *Repo) GetPendingSummaryToRetry(due time.Time) (*PendingSummary, erro
 	repo.muDb.RLock()
 	defer repo.muDb.RUnlock()
 
-	query := `SELECT account_id, status_id, article_text, attempts,
+	query := `SELECT account_id, status_id, title, article_text, attempts,
 		next_retry_due, state FROM toot_summaries
 		WHERE state=? AND next_retry_due<=?
 		ORDER BY next_retry_due ASC LIMIT 1`
@@ -953,8 +953,9 @@ func (repo *Repo) GetPendingSummaryToRetry(due time.Time) (*PendingSummary, erro
 
 	for rows.Next() {
 		ps := PendingSummary{}
-		if err = rows.Scan(&ps.AccountId, &ps.StatusId, &ps.ArticleText,
-			&ps.Attempts, &ps.NextRetryDue, &ps.State); err != nil {
+		if err = rows.Scan(&ps.AccountId, &ps.StatusId, &ps.Title,
+			&ps.ArticleText, &ps.Attempts, &ps.NextRetryDue,
+			&ps.State); err != nil {
 			return nil, err
 		}
 		return &ps, nil
@@ -978,11 +979,12 @@ func (repo *Repo) FinishPendingSummary(statusId string, state PendingSummaryStat
 	repo.muDb.Lock()
 	defer repo.muDb.Unlock()
 
-	// The article text is only needed while retries can
-	// still happen; dropping it keeps a terminal row
-	// small enough to keep around for diagnostics.
+	// The article text and title are only needed while
+	// retries can still happen; dropping them keeps a
+	// terminal row small enough to keep around for
+	// diagnostics.
 	_, err := repo.db.Exec(`UPDATE toot_summaries
-		SET state=?, article_text='' WHERE status_id=?`,
+		SET state=?, title='', article_text='' WHERE status_id=?`,
 		state, statusId)
 	return err
 }

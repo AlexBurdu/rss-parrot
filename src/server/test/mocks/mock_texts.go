@@ -19,6 +19,7 @@ import (
 type MockITexts struct {
 	ctrl     *gomock.Controller
 	recorder *MockITextsMockRecorder
+	isgomock struct{}
 }
 
 // MockITextsMockRecorder is the mock recorder for MockITexts.
@@ -39,29 +40,29 @@ func (m *MockITexts) EXPECT() *MockITextsMockRecorder {
 }
 
 // Get mocks base method.
-func (m *MockITexts) Get(arg0 string) string {
+func (m *MockITexts) Get(id string) string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", arg0)
+	ret := m.ctrl.Call(m, "Get", id)
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockITextsMockRecorder) Get(arg0 any) *gomock.Call {
+func (mr *MockITextsMockRecorder) Get(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockITexts)(nil).Get), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockITexts)(nil).Get), id)
 }
 
 // WithVals mocks base method.
-func (m *MockITexts) WithVals(arg0 string, arg1 map[string]string) string {
+func (m *MockITexts) WithVals(id string, vals map[string]string) string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WithVals", arg0, arg1)
+	ret := m.ctrl.Call(m, "WithVals", id, vals)
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
 // WithVals indicates an expected call of WithVals.
-func (mr *MockITextsMockRecorder) WithVals(arg0, arg1 any) *gomock.Call {
+func (mr *MockITextsMockRecorder) WithVals(id, vals any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithVals", reflect.TypeOf((*MockITexts)(nil).WithVals), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithVals", reflect.TypeOf((*MockITexts)(nil).WithVals), id, vals)
 }

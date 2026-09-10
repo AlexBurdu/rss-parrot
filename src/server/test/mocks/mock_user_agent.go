@@ -20,6 +20,7 @@ import (
 type MockIUserAgent struct {
 	ctrl     *gomock.Controller
 	recorder *MockIUserAgentMockRecorder
+	isgomock struct{}
 }
 
 // MockIUserAgentMockRecorder is the mock recorder for MockIUserAgent.
@@ -40,13 +41,13 @@ func (m *MockIUserAgent) EXPECT() *MockIUserAgentMockRecorder {
 }
 
 // AddUserAgent mocks base method.
-func (m *MockIUserAgent) AddUserAgent(arg0 *http.Request) {
+func (m *MockIUserAgent) AddUserAgent(req *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddUserAgent", arg0)
+	m.ctrl.Call(m, "AddUserAgent", req)
 }
 
 // AddUserAgent indicates an expected call of AddUserAgent.
-func (mr *MockIUserAgentMockRecorder) AddUserAgent(arg0 any) *gomock.Call {
+func (mr *MockIUserAgentMockRecorder) AddUserAgent(req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUserAgent", reflect.TypeOf((*MockIUserAgent)(nil).AddUserAgent), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUserAgent", reflect.TypeOf((*MockIUserAgent)(nil).AddUserAgent), req)
 }

@@ -41,15 +41,15 @@ func (m *MockISummaryRetrier) EXPECT() *MockISummaryRetrierMockRecorder {
 }
 
 // QueueForRetry mocks base method.
-func (m *MockISummaryRetrier) QueueForRetry(accountId int, statusId, articleText string, now time.Time) {
+func (m *MockISummaryRetrier) QueueForRetry(accountId int, statusId, title, articleText string, now time.Time) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "QueueForRetry", accountId, statusId, articleText, now)
+	m.ctrl.Call(m, "QueueForRetry", accountId, statusId, title, articleText, now)
 }
 
 // QueueForRetry indicates an expected call of QueueForRetry.
-func (mr *MockISummaryRetrierMockRecorder) QueueForRetry(accountId, statusId, articleText, now any) *gomock.Call {
+func (mr *MockISummaryRetrierMockRecorder) QueueForRetry(accountId, statusId, title, articleText, now any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueueForRetry", reflect.TypeOf((*MockISummaryRetrier)(nil).QueueForRetry), accountId, statusId, articleText, now)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueueForRetry", reflect.TypeOf((*MockISummaryRetrier)(nil).QueueForRetry), accountId, statusId, title, articleText, now)
 }
 
 // RetryNextDue mocks base method.

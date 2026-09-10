@@ -21,6 +21,7 @@ import (
 type MockIMessenger struct {
 	ctrl     *gomock.Controller
 	recorder *MockIMessengerMockRecorder
+	isgomock struct{}
 }
 
 // MockIMessengerMockRecorder is the mock recorder for MockIMessenger.
@@ -41,27 +42,27 @@ func (m *MockIMessenger) EXPECT() *MockIMessengerMockRecorder {
 }
 
 // EnqueueBroadcast mocks base method.
-func (m *MockIMessenger) EnqueueBroadcast(arg0, arg1 string, arg2 time.Time, arg3 string) error {
+func (m *MockIMessenger) EnqueueBroadcast(user, statusId string, tootedAt time.Time, msg string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnqueueBroadcast", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "EnqueueBroadcast", user, statusId, tootedAt, msg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // EnqueueBroadcast indicates an expected call of EnqueueBroadcast.
-func (mr *MockIMessengerMockRecorder) EnqueueBroadcast(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockIMessengerMockRecorder) EnqueueBroadcast(user, statusId, tootedAt, msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueBroadcast", reflect.TypeOf((*MockIMessenger)(nil).EnqueueBroadcast), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnqueueBroadcast", reflect.TypeOf((*MockIMessenger)(nil).EnqueueBroadcast), user, statusId, tootedAt, msg)
 }
 
 // SendMessageAsync mocks base method.
-func (m *MockIMessenger) SendMessageAsync(arg0, arg1, arg2 string, arg3 []*logic.MsgMention, arg4, arg5 []string, arg6 string) {
+func (m *MockIMessenger) SendMessageAsync(byUser, toInbox, msg string, mentions []*logic.MsgMention, to, cc []string, inReplyTo string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SendMessageAsync", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	m.ctrl.Call(m, "SendMessageAsync", byUser, toInbox, msg, mentions, to, cc, inReplyTo)
 }
 
 // SendMessageAsync indicates an expected call of SendMessageAsync.
-func (mr *MockIMessengerMockRecorder) SendMessageAsync(arg0, arg1, arg2, arg3, arg4, arg5, arg6 any) *gomock.Call {
+func (mr *MockIMessengerMockRecorder) SendMessageAsync(byUser, toInbox, msg, mentions, to, cc, inReplyTo any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessageAsync", reflect.TypeOf((*MockIMessenger)(nil).SendMessageAsync), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessageAsync", reflect.TypeOf((*MockIMessenger)(nil).SendMessageAsync), byUser, toInbox, msg, mentions, to, cc, inReplyTo)
 }

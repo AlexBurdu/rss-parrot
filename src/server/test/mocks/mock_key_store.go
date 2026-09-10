@@ -20,6 +20,7 @@ import (
 type MockIKeyStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockIKeyStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockIKeyStoreMockRecorder is the mock recorder for MockIKeyStore.
@@ -40,18 +41,18 @@ func (m *MockIKeyStore) EXPECT() *MockIKeyStoreMockRecorder {
 }
 
 // GetPrivKey mocks base method.
-func (m *MockIKeyStore) GetPrivKey(arg0 string) (*rsa.PrivateKey, error) {
+func (m *MockIKeyStore) GetPrivKey(user string) (*rsa.PrivateKey, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPrivKey", arg0)
+	ret := m.ctrl.Call(m, "GetPrivKey", user)
 	ret0, _ := ret[0].(*rsa.PrivateKey)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPrivKey indicates an expected call of GetPrivKey.
-func (mr *MockIKeyStoreMockRecorder) GetPrivKey(arg0 any) *gomock.Call {
+func (mr *MockIKeyStoreMockRecorder) GetPrivKey(user any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPrivKey", reflect.TypeOf((*MockIKeyStore)(nil).GetPrivKey), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPrivKey", reflect.TypeOf((*MockIKeyStore)(nil).GetPrivKey), user)
 }
 
 // MakeKeyPair mocks base method.

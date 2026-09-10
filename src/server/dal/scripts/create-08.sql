@@ -1,0 +1,1 @@
+ALTER TABLE toot_summaries ADD COLUMN title TEXT NOT NULL DEFAULT ('');

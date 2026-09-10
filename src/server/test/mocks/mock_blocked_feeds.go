@@ -19,6 +19,7 @@ import (
 type MockIBlockedFeeds struct {
 	ctrl     *gomock.Controller
 	recorder *MockIBlockedFeedsMockRecorder
+	isgomock struct{}
 }
 
 // MockIBlockedFeedsMockRecorder is the mock recorder for MockIBlockedFeeds.
@@ -39,16 +40,16 @@ func (m *MockIBlockedFeeds) EXPECT() *MockIBlockedFeedsMockRecorder {
 }
 
 // IsBlocked mocks base method.
-func (m *MockIBlockedFeeds) IsBlocked(arg0 string) (bool, error) {
+func (m *MockIBlockedFeeds) IsBlocked(feedUrl string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsBlocked", arg0)
+	ret := m.ctrl.Call(m, "IsBlocked", feedUrl)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // IsBlocked indicates an expected call of IsBlocked.
-func (mr *MockIBlockedFeedsMockRecorder) IsBlocked(arg0 any) *gomock.Call {
+func (mr *MockIBlockedFeedsMockRecorder) IsBlocked(feedUrl any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsBlocked", reflect.TypeOf((*MockIBlockedFeeds)(nil).IsBlocked), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsBlocked", reflect.TypeOf((*MockIBlockedFeeds)(nil).IsBlocked), feedUrl)
 }
