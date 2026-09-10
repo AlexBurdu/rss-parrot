@@ -1,0 +1,77 @@
+{{define "main"}}
+  <h2>Feed Health Status</h2>
+  <p><i>Operational health and check status for feeds followed by the Parrot.</i></p>
+
+  <section class="status-summary">
+    <div class="status-card">
+      <span class="status-label">Total Feeds</span>
+      <span class="status-num">{{.Data.TotalCount}}</span>
+    </div>
+    <div class="status-card card-healthy">
+      <span class="status-label">Healthy</span>
+      <span class="status-num">{{.Data.HealthyCount}}</span>
+    </div>
+    <div class="status-card card-stale">
+      <span class="status-label">Stale (&gt;7 days)</span>
+      <span class="status-num">{{.Data.StaleCount}}</span>
+    </div>
+    <div class="status-card card-error">
+      <span class="status-label">Errors</span>
+      <span class="status-num">{{.Data.ErrorCount}}</span>
+    </div>
+  </section>
+
+  <nav class="filter-tabs">
+    <a href="/web/status" class="filter-tab {{if eq .Data.ActiveFilter "all"}}selected{{end}}">All ({{.Data.TotalCount}})</a>
+    <a href="/web/status?filter=errors" class="filter-tab filter-errors {{if eq .Data.ActiveFilter "errors"}}selected{{end}}">Errors ({{.Data.ErrorCount}})</a>
+    <a href="/web/status?filter=stale" class="filter-tab filter-stale {{if eq .Data.ActiveFilter "stale"}}selected{{end}}">Stale ({{.Data.StaleCount}})</a>
+    <a href="/web/status?filter=healthy" class="filter-tab filter-healthy {{if eq .Data.ActiveFilter "healthy"}}selected{{end}}">Healthy ({{.Data.HealthyCount}})</a>
+  </nav>
+
+  {{if eq (len .Data.Feeds) 0}}
+    <p class="empty-state">No feeds match the selected filter.</p>
+  {{else}}
+    {{range $feed := .Data.Feeds}}
+      <article class="feed status-feed {{if gt $feed.ErrorCount 0}}status-feed-error{{else if $feed.IsStale}}status-feed-stale{{else}}status-feed-healthy{{end}}">
+        <div>
+          {{if gt $feed.ErrorCount 0}}
+            <span class="badge badge-error">Error ({{$feed.ErrorCount}})</span>
+          {{end}}
+          {{if $feed.IsStale}}
+            <span class="badge badge-stale">Stale</span>
+          {{end}}
+          {{if and (eq $feed.ErrorCount 0) (not $feed.IsStale)}}
+            <span class="badge badge-healthy">Healthy</span>
+          {{end}}
+          <h3>{{$feed.FeedUrl}}</h3>
+          {{- if ($feed.SiteUrl | isNonEmptyString) }}
+          <span>[<a href="{{$feed.SiteUrl}}">visit</a>]</span>
+          {{- end -}}
+        </div>
+        <p class="info">
+          Parroting as <a href="{{$feed.Handle | profileUrl}}">@{{$feed.Handle}}</a>
+          &bull; {{$feed.FollowerCount}} follower{{if ne $feed.FollowerCount 1}}s{{end}}
+        </p>
+        <p class="info">
+          Last posted: {{$feed.FeedLastUpdated | prettyDateTime}} ({{$feed.FeedLastUpdated | prettyAge}})
+          {{if $feed.IsStale}}
+            <span class="stale-warning">&#x26A0; No updates in &gt;7 days</span>
+          {{end}}
+        </p>
+        <p class="info">
+          Next check due: {{$feed.NextCheckDue | prettyDateTime}} ({{$feed.NextCheckDue | prettyAge}})
+        </p>
+        {{if ($feed.FeedName | isNonEmptyString)}}
+          <p class="title">{{$feed.FeedName}}</p>
+        {{end}}
+        {{if gt $feed.ErrorCount 0}}
+          <div class="error-box">
+            <strong>Last Error:</strong> <code>{{$feed.LastError}}</code>
+          </div>
+        {{end}}
+      </article>
+    {{end}}
+  {{end}}
+
+  <div class="bottom-spacer"></div>
+{{end}}

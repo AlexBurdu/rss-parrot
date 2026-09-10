@@ -275,6 +275,21 @@ func (mr *MockIRepoMockRecorder) GetFeedFollowerCount() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFeedFollowerCount", reflect.TypeOf((*MockIRepo)(nil).GetFeedFollowerCount))
 }
 
+// GetFeedHealthStatus mocks base method.
+func (m *MockIRepo) GetFeedHealthStatus(birbHandle string) ([]*dal.FeedHealthItem, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFeedHealthStatus", birbHandle)
+	ret0, _ := ret[0].([]*dal.FeedHealthItem)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFeedHealthStatus indicates an expected call of GetFeedHealthStatus.
+func (mr *MockIRepoMockRecorder) GetFeedHealthStatus(birbHandle any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFeedHealthStatus", reflect.TypeOf((*MockIRepo)(nil).GetFeedHealthStatus), birbHandle)
+}
+
 // GetFeedLastUpdated mocks base method.
 func (m *MockIRepo) GetFeedLastUpdated(accountId int) (time.Time, error) {
 	m.ctrl.T.Helper()
@@ -509,6 +524,20 @@ func (m *MockIRepo) PurgePostsAndToots(accountId int, fromBefore time.Time) erro
 func (mr *MockIRepoMockRecorder) PurgePostsAndToots(accountId, fromBefore any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PurgePostsAndToots", reflect.TypeOf((*MockIRepo)(nil).PurgePostsAndToots), accountId, fromBefore)
+}
+
+// RecordFeedCheckError mocks base method.
+func (m *MockIRepo) RecordFeedCheckError(accountId int, errMsg string, nextCheckDue time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RecordFeedCheckError", accountId, errMsg, nextCheckDue)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RecordFeedCheckError indicates an expected call of RecordFeedCheckError.
+func (mr *MockIRepoMockRecorder) RecordFeedCheckError(accountId, errMsg, nextCheckDue any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordFeedCheckError", reflect.TypeOf((*MockIRepo)(nil).RecordFeedCheckError), accountId, errMsg, nextCheckDue)
 }
 
 // RemoveFollower mocks base method.

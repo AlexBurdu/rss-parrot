@@ -92,6 +92,9 @@ func NewMux(groups []IHandlerGroup, logger shared.ILogger) *mux.Router {
 			}
 		}
 	}
+	router.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/web/status", http.StatusFound)
+	}).Methods("GET")
 	// Static files with error logging
 	// HEAD requests: 405
 	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

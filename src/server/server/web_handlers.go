@@ -68,6 +68,7 @@ func (hg *webHandlerGroup) GroupDefs() []handlerDef {
 	return []handlerDef{
 		{"GET", "/feeds/{feed}", func(w http.ResponseWriter, r *http.Request) { hg.getOneFeed(w, r) }},
 		{"GET", "/feeds", func(w http.ResponseWriter, r *http.Request) { hg.getFeeds(w, r) }},
+		{"GET", "/status", func(w http.ResponseWriter, r *http.Request) { hg.getStatus(w, r) }},
 		{"GET", "/changes", func(w http.ResponseWriter, r *http.Request) { hg.getChanges(w, r) }},
 		{"GET", "/about", func(w http.ResponseWriter, r *http.Request) { hg.getAbout(w, r) }},
 		{"GET", rootPlacholder, func(w http.ResponseWriter, r *http.Request) { hg.getRoot(w, r) }},
@@ -165,11 +166,43 @@ func (hg *webHandlerGroup) addTemplateFuncs(t *template.Template) {
 		dateStr := prettyDate(t)
 		return fmt.Sprintf("%s %02d:%02d", dateStr, t.Hour(), t.Minute())
 	}
+	prettyAge := func(t time.Time) string {
+		if t.Year() < 2000 {
+			return "never"
+		}
+		dur := time.Since(t)
+		if dur < 0 {
+			return "just now"
+		}
+		if dur < time.Minute {
+			return "just now"
+		}
+		if dur < time.Hour {
+			mins := int(dur.Minutes())
+			if mins == 1 {
+				return "1m ago"
+			}
+			return fmt.Sprintf("%dm ago", mins)
+		}
+		if dur < 24*time.Hour {
+			hours := int(dur.Hours())
+			if hours == 1 {
+				return "1h ago"
+			}
+			return fmt.Sprintf("%dh ago", hours)
+		}
+		days := int(dur.Hours() / 24)
+		if days == 1 {
+			return "1 day ago"
+		}
+		return fmt.Sprintf("%d days ago", days)
+	}
 
 	t.Funcs(template.FuncMap{
 		"isNonEmptyString": func(s string) bool { return s != "" },
 		"prettyDate":       prettyDate,
 		"prettyDateTime":   prettyDateTime,
+		"prettyAge":        prettyAge,
 		"profileUrl":       profileUrl,
 	})
 }
@@ -178,6 +211,7 @@ type baseModel struct {
 	Timestamp       string
 	Version         string
 	LnkFeedsClass   string
+	LnkStatusClass  string
 	LnkChangesClass string
 	LnkAboutClass   string
 	Data            any
@@ -303,6 +337,83 @@ func (hg *webHandlerGroup) getFeeds(w http.ResponseWriter, r *http.Request) {
 
 	t, model := hg.mustGetPageTemplate("feeds")
 	model.LnkFeedsClass = "selected"
+	model.Data = &data
+
+	w.Header().Set("X-Robots-Tag", "noindex")
+	t.ExecuteTemplate(w, "index.tmpl", model)
+}
+
+type statusModel struct {
+	Feeds        []*dal.FeedHealthItem
+	TotalCount   int
+	HealthyCount int
+	StaleCount   int
+	ErrorCount   int
+	ActiveFilter string
+}
+
+func (hg *webHandlerGroup) getStatus(w http.ResponseWriter, r *http.Request) {
+
+	obs := hg.metrics.StartWebRequestIn(r.URL.Path)
+	defer obs.Finish()
+
+	feeds, err := hg.repo.GetFeedHealthStatus(hg.cfg.Birb.User)
+	if err != nil {
+		hg.logger.Errorf("Error retrieving feed health status: %v", err)
+		hg.send500(w, r)
+		return
+	}
+
+	filter := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("filter")))
+	if filter != "errors" && filter != "stale" && filter != "healthy" {
+		filter = "all"
+	}
+
+	healthyCount := 0
+	staleCount := 0
+	errorCount := 0
+
+	for _, f := range feeds {
+		if f.ErrorCount > 0 {
+			errorCount++
+		}
+		if f.IsStale {
+			staleCount++
+		}
+		if f.ErrorCount == 0 && !f.IsStale {
+			healthyCount++
+		}
+	}
+
+	var filteredFeeds []*dal.FeedHealthItem
+	for _, f := range feeds {
+		include := false
+		switch filter {
+		case "errors":
+			include = f.ErrorCount > 0
+		case "stale":
+			include = f.IsStale
+		case "healthy":
+			include = f.ErrorCount == 0 && !f.IsStale
+		default:
+			include = true
+		}
+		if include {
+			filteredFeeds = append(filteredFeeds, f)
+		}
+	}
+
+	data := statusModel{
+		Feeds:        filteredFeeds,
+		TotalCount:   len(feeds),
+		HealthyCount: healthyCount,
+		StaleCount:   staleCount,
+		ErrorCount:   errorCount,
+		ActiveFilter: filter,
+	}
+
+	t, model := hg.mustGetPageTemplate("status")
+	model.LnkStatusClass = "selected"
 	model.Data = &data
 
 	w.Header().Set("X-Robots-Tag", "noindex")
