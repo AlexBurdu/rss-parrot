@@ -31,10 +31,6 @@ type IArticleExtractor interface {
 	// any reason. Callers fall back to whatever the
 	// feed itself gave them.
 	Extract(articleUrl string) string
-
-	// IsEnabled reports whether full-text extraction is
-	// configured at all.
-	IsEnabled() bool
 }
 
 const (
@@ -117,13 +113,9 @@ func newArticleExtractor(
 	}
 }
 
-func (ae *articleExtractor) IsEnabled() bool {
-	return ae.cfg.ExtractFullText
-}
-
 func (ae *articleExtractor) Extract(articleUrl string) string {
 
-	if !ae.IsEnabled() {
+	if !ae.cfg.ExtractFullText {
 		return ""
 	}
 	parsed, err := parsePublicPageUrl(articleUrl)
@@ -282,6 +274,10 @@ func newPublicWebClient(timeout time.Duration) *http.Client {
 		KeepAlive: 30 * time.Second,
 		Control:   refuseNonPublicAddress,
 	}
+	// Proxy is deliberately left unset, unlike the
+	// default transport: through a proxy the only
+	// address dialled is the proxy's own, and the check
+	// above would wave every article URL through.
 	return &http.Client{
 		Timeout: timeout,
 		Transport: &http.Transport{

@@ -76,8 +76,6 @@ type fakeExtractor struct {
 	callCount int
 }
 
-func (e *fakeExtractor) IsEnabled() bool { return true }
-
 func (e *fakeExtractor) Extract(articleUrl string) string {
 	e.callCount++
 	e.askedFor = articleUrl

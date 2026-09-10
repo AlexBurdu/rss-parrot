@@ -52,17 +52,3 @@ func (mr *MockIArticleExtractorMockRecorder) Extract(articleUrl any) *gomock.Cal
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Extract", reflect.TypeOf((*MockIArticleExtractor)(nil).Extract), articleUrl)
 }
-
-// IsEnabled mocks base method.
-func (m *MockIArticleExtractor) IsEnabled() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsEnabled")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsEnabled indicates an expected call of IsEnabled.
-func (mr *MockIArticleExtractorMockRecorder) IsEnabled() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEnabled", reflect.TypeOf((*MockIArticleExtractor)(nil).IsEnabled))
-}
