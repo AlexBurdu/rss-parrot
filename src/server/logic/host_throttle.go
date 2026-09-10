@@ -16,9 +16,11 @@ type hostThrottle struct {
 	mu       sync.Mutex
 	nextFree map[string]time.Time
 	gap      time.Duration
-	// maxHosts caps the bookkeeping map. Reached only
-	// by long-running processes that have talked to
-	// very many sites; stale hosts are dropped first.
+	// maxHosts is when to start dropping hosts whose
+	// slot has already come free. A best-effort cap,
+	// not a hard one: if every tracked host is still
+	// waiting its turn there is nothing safe to drop,
+	// and the map is allowed past it until some are.
 	maxHosts int
 }
 

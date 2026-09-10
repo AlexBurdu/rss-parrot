@@ -233,3 +233,19 @@ func Test_CreateToot_SummariesOff_NothingIsDownloaded(t *testing.T) {
 	assert.Equal(t, 0, f.extractor.callCount)
 	assert.NotNil(t, f.repo.added)
 }
+
+func Test_CreateToot_MarkupOnlyContent_FallsThroughToExtraction(t *testing.T) {
+
+	ff, f := setupCreateTootTest("A summary.")
+	f.extractor.result = "Extracted body text."
+	itm := tootTestItem()
+	// A non-empty <content> that carries no text: the
+	// summarizer would otherwise be handed nothing.
+	itm.Content = `<p><img src="hero.jpg"></p>`
+
+	err := ff.createToot(7, "x.test", itm, true)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, f.extractor.callCount)
+	assert.Equal(t, "Extracted body text.", f.summarizer.lastText)
+}

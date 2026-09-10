@@ -656,8 +656,13 @@ func (ff *feedFollower) getArticleText(
 	itm *gofeed.Item,
 	plainDescription string,
 ) string {
-	if itm.Content != "" {
-		return stripHtml(itm.Content)
+	// Tested after stripping, not before: a <content>
+	// holding only markup — a lone image, a share
+	// widget — is a non-empty field that yields no
+	// text at all, and handing the summarizer an empty
+	// string is worse than going to fetch the page.
+	if content := stripHtml(itm.Content); content != "" {
+		return content
 	}
 	// With no summarizer configured this text is never
 	// read, so downloading a page to build it would be
