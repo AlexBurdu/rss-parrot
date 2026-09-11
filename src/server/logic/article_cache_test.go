@@ -2,6 +2,7 @@ package logic
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -68,4 +69,30 @@ func Test_ArticleCache_RefreshDoesNotEvict(t *testing.T) {
 	text, ok := c.get("https://x.test/b", t0)
 	assert.True(t, ok)
 	assert.Equal(t, "two", text)
+}
+
+// The cache is reached from the feed check loop and
+// from HTTP handler goroutines at the same time, so its
+// lock has to hold up. Meaningful under -race.
+func Test_ArticleCache_ConcurrentUseIsSafe(t *testing.T) {
+
+	c := newArticleCache(time.Hour, 16)
+	t0 := time.Now()
+	var wg sync.WaitGroup
+	for i := 0; i < 32; i++ {
+		wg.Add(1)
+		go func(n int) {
+			defer wg.Done()
+			// Overlapping keys, so readers and writers
+			// contend on the same entries.
+			url := fmt.Sprintf("https://x.test/%d", n%8)
+			for j := 0; j < 50; j++ {
+				c.put(url, "body", t0)
+				c.get(url, t0)
+			}
+		}(i)
+	}
+	wg.Wait()
+
+	assert.LessOrEqual(t, len(c.entries), 16)
 }
