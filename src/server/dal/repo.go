@@ -13,7 +13,7 @@ import (
 
 //go:generate mockgen --build_flags=--mod=mod -destination ../test/mocks/mock_repo.go -package mocks rss_parrot/dal IRepo
 
-const schemaVer = 8
+const schemaVer = 9
 
 //go:embed scripts/*
 var scripts embed.FS
@@ -56,9 +56,11 @@ type IRepo interface {
 	GetTootExtracts(accountId int) ([]*Toot, error)
 	GetFeedLastUpdated(accountId int) (time.Time, error)
 	UpdateAccountFeedTimes(accountId int, lastUpdated, nextCheckDue time.Time) error
+	RecordFeedCheckError(accountId int, errMsg string, nextCheckDue time.Time) error
 	AddFeedPostIfNew(accountId int, post *FeedPost) (isNew bool, err error)
 	GetAccountToCheck(checkDue time.Time) (*Account, int, error)
 	GetFollowerCount(user string, onlyApproved bool) (uint, error)
+	GetFeedHealthStatus(birbHandle string) ([]*FeedHealthItem, error)
 
 	// Returns number of all followers of feeds. Includes unapproved and banned ones, but excludes followers of birb.
 	GetFeedFollowerCount() (int, error)
@@ -273,12 +275,13 @@ func (repo *Repo) getAccount(user string) (*Account, error) {
 
 	row := repo.db.QueryRow(
 		`SELECT id, created_at, user_url, handle, feed_name, feed_summary, profile_image_url, site_url, feed_url,
-         		feed_last_updated, next_check_due, pubkey
+         		feed_last_updated, next_check_due, pubkey, error_count, last_error
 		FROM accounts WHERE handle=?`, user)
 	var err error
 	var res Account
 	err = row.Scan(&res.Id, &res.CreatedAt, &res.UserUrl, &res.Handle, &res.FeedName, &res.FeedSummary,
-		&res.ProfileImageUrl, &res.SiteUrl, &res.FeedUrl, &res.FeedLastUpdated, &res.NextCheckDue, &res.PubKey)
+		&res.ProfileImageUrl, &res.SiteUrl, &res.FeedUrl, &res.FeedLastUpdated, &res.NextCheckDue, &res.PubKey,
+		&res.ErrorCount, &res.LastError)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -369,7 +372,7 @@ func (repo *Repo) GetAccountsPage(offset, limit int) ([]*Account, int, error) {
 	}
 
 	query := `SELECT id, created_at, user_url, handle, feed_name, feed_summary, profile_image_url, site_url, feed_url,
-        feed_last_updated, next_check_due, pubkey
+        feed_last_updated, next_check_due, pubkey, error_count, last_error
 		FROM accounts ORDER BY ID DESC LIMIT ? OFFSET ?`
 	rows, err := repo.db.Query(query, limit, offset)
 	if err != nil {
@@ -380,7 +383,8 @@ func (repo *Repo) GetAccountsPage(offset, limit int) ([]*Account, int, error) {
 	for rows.Next() {
 		a := Account{}
 		err = rows.Scan(&a.Id, &a.CreatedAt, &a.UserUrl, &a.Handle, &a.FeedName, &a.FeedSummary,
-			&a.ProfileImageUrl, &a.SiteUrl, &a.FeedUrl, &a.FeedLastUpdated, &a.NextCheckDue, &a.PubKey)
+			&a.ProfileImageUrl, &a.SiteUrl, &a.FeedUrl, &a.FeedLastUpdated, &a.NextCheckDue, &a.PubKey,
+			&a.ErrorCount, &a.LastError)
 		if err = rows.Err(); err != nil {
 			return nil, 0, err
 		}
@@ -732,8 +736,19 @@ func (repo *Repo) UpdateAccountFeedTimes(accountId int, lastUpdated, nextCheckDu
 	repo.muDb.Lock()
 	defer repo.muDb.Unlock()
 
-	_, err := repo.db.Exec(`UPDATE accounts SET feed_last_updated=?, next_check_due=?
+	_, err := repo.db.Exec(`UPDATE accounts SET feed_last_updated=?, next_check_due=?, error_count=0, last_error=''
         WHERE id=?`, lastUpdated, nextCheckDue, accountId)
+	return err
+}
+
+func (repo *Repo) RecordFeedCheckError(accountId int, errMsg string, nextCheckDue time.Time) error {
+
+	repo.muDb.Lock()
+	defer repo.muDb.Unlock()
+
+	_, err := repo.db.Exec(`UPDATE accounts
+        SET error_count = error_count + 1, last_error = ?, next_check_due = ?
+        WHERE id = ?`, errMsg, nextCheckDue, accountId)
 	return err
 }
 
@@ -749,7 +764,7 @@ func (repo *Repo) GetAccountToCheck(checkDue time.Time) (*Account, int, error) {
 	}
 
 	rows, err := repo.db.Query(`SELECT id, created_at, user_url, handle, feed_name, feed_summary,
-    	profile_image_url, site_url, feed_url, feed_last_updated, next_check_due, pubkey
+    	profile_image_url, site_url, feed_url, feed_last_updated, next_check_due, pubkey, error_count, last_error
 		FROM accounts WHERE next_check_due<? LIMIT 1`, checkDue)
 	if err != nil {
 		return nil, 0, err
@@ -759,7 +774,8 @@ func (repo *Repo) GetAccountToCheck(checkDue time.Time) (*Account, int, error) {
 	for rows.Next() {
 		res := Account{}
 		err = rows.Scan(&res.Id, &res.CreatedAt, &res.UserUrl, &res.Handle, &res.FeedName, &res.FeedSummary,
-			&res.ProfileImageUrl, &res.SiteUrl, &res.FeedUrl, &res.FeedLastUpdated, &res.NextCheckDue, &res.PubKey)
+			&res.ProfileImageUrl, &res.SiteUrl, &res.FeedUrl, &res.FeedLastUpdated, &res.NextCheckDue, &res.PubKey,
+			&res.ErrorCount, &res.LastError)
 		if err = rows.Err(); err != nil {
 			return nil, 0, err
 		}
@@ -987,4 +1003,43 @@ func (repo *Repo) FinishPendingSummary(statusId string, state PendingSummaryStat
 		SET state=?, title='', article_text='' WHERE status_id=?`,
 		state, statusId)
 	return err
+}
+
+func (repo *Repo) GetFeedHealthStatus(birbHandle string) ([]*FeedHealthItem, error) {
+
+	repo.muDb.RLock()
+	defer repo.muDb.RUnlock()
+
+	query := `SELECT a.id, a.created_at, a.user_url, a.handle, a.feed_name, a.feed_summary,
+        a.profile_image_url, a.site_url, a.feed_url, a.feed_last_updated, a.next_check_due,
+        a.error_count, a.last_error,
+        COUNT(CASE WHEN f.approve_status = 1 THEN 1 END) AS follower_count
+		FROM accounts a
+		LEFT JOIN followers f ON a.id = f.account_id
+		WHERE a.handle != ?
+		GROUP BY a.id
+		ORDER BY a.error_count DESC, a.feed_last_updated ASC`
+
+	rows, err := repo.db.Query(query, birbHandle)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	staleThreshold := time.Now().UTC().Add(-7 * 24 * time.Hour)
+	var res []*FeedHealthItem
+	for rows.Next() {
+		item := FeedHealthItem{}
+		var followerCount int
+		err = rows.Scan(&item.Id, &item.CreatedAt, &item.UserUrl, &item.Handle, &item.FeedName, &item.FeedSummary,
+			&item.ProfileImageUrl, &item.SiteUrl, &item.FeedUrl, &item.FeedLastUpdated, &item.NextCheckDue,
+			&item.ErrorCount, &item.LastError, &followerCount)
+		if err = rows.Err(); err != nil {
+			return nil, err
+		}
+		item.FollowerCount = uint(followerCount)
+		item.IsStale = item.FeedLastUpdated.Before(staleThreshold)
+		res = append(res, &item)
+	}
+	return res, nil
 }

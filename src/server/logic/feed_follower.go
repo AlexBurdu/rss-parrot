@@ -1107,8 +1107,8 @@ func (ff *feedFollower) feedCheckLoopInner() {
 		ff.logger.Errorf("Error updating feed: %s: %v", acct.Handle, err)
 		// Reschedule for updating as if there was no new post
 		nextCheckDue := ff.getNextCheckTime(lastUpdated)
-		if err = ff.repo.UpdateAccountFeedTimes(acct.Id, lastUpdated, nextCheckDue); err != nil {
-			ff.logger.Errorf("Failed to reschedule for checking after error: %s: %v", acct.Handle, err)
+		if err = ff.repo.RecordFeedCheckError(acct.Id, err.Error(), nextCheckDue); err != nil {
+			ff.logger.Errorf("Failed to record error for checking: %s: %v", acct.Handle, err)
 		}
 	}
 	// If no error, updateFeed has set next due date for checking

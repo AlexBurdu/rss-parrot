@@ -18,6 +18,26 @@ type Account struct {
 	PubKey          string
 	ProfileImageUrl string
 	HeaderImageUrl  string
+	ErrorCount      int
+	LastError       string
+}
+
+type FeedHealthItem struct {
+	Id              int
+	CreatedAt       time.Time
+	UserUrl         string
+	Handle          string
+	FeedName        string
+	FeedSummary     string
+	ProfileImageUrl string
+	SiteUrl         string
+	FeedUrl         string
+	FeedLastUpdated time.Time
+	NextCheckDue    time.Time
+	ErrorCount      int
+	LastError       string
+	FollowerCount   uint
+	IsStale         bool
 }
 
 type Mention struct {
