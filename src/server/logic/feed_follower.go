@@ -647,11 +647,11 @@ func (ff *feedFollower) createToot(accountId int, accountHandle string, itm *gof
 	plainDescription = shared.TruncateWithEllipsis(
 		plainDescription, shared.MaxDescriptionLen)
 	// Generate AI summary from article text
-	articleText := plainTitle + ". " + plainDescription
+	articleText := plainDescription
 	if itm.Content != "" {
 		articleText = stripHtml(itm.Content)
 	}
-	summary := ff.summarizer.Summarize(articleText)
+	summary := ff.summarizer.Summarize(plainTitle, articleText)
 	content := ff.txt.WithVals(
 		"toot_new_post.html", map[string]string{
 			"title":       plainTitle,
@@ -682,7 +682,7 @@ func (ff *feedFollower) createToot(accountId int, accountHandle string, itm *gof
 	// queue so a later attempt can fill the summary in.
 	if strings.TrimSpace(summary) == "" {
 		ff.summaryRetrier.QueueForRetry(
-			accountId, statusId, articleText, tootedAt)
+			accountId, statusId, plainTitle, articleText, tootedAt)
 	}
 	if sendToot {
 		if err = ff.messenger.EnqueueBroadcast(accountHandle, statusId, tootedAt, content); err != nil {

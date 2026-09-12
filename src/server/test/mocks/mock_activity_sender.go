@@ -21,6 +21,7 @@ import (
 type MockIActivitySender struct {
 	ctrl     *gomock.Controller
 	recorder *MockIActivitySenderMockRecorder
+	isgomock struct{}
 }
 
 // MockIActivitySenderMockRecorder is the mock recorder for MockIActivitySender.
@@ -41,15 +42,15 @@ func (m *MockIActivitySender) EXPECT() *MockIActivitySenderMockRecorder {
 }
 
 // Send mocks base method.
-func (m *MockIActivitySender) Send(arg0 *rsa.PrivateKey, arg1, arg2 string, arg3 *dto.ActivityOut) error {
+func (m *MockIActivitySender) Send(privKey *rsa.PrivateKey, sendingUser, inboxUrl string, activity *dto.ActivityOut) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "Send", privKey, sendingUser, inboxUrl, activity)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Send indicates an expected call of Send.
-func (mr *MockIActivitySenderMockRecorder) Send(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockIActivitySenderMockRecorder) Send(privKey, sendingUser, inboxUrl, activity any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockIActivitySender)(nil).Send), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockIActivitySender)(nil).Send), privKey, sendingUser, inboxUrl, activity)
 }

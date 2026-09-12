@@ -20,6 +20,7 @@ import (
 type MockIUserDirectory struct {
 	ctrl     *gomock.Controller
 	recorder *MockIUserDirectoryMockRecorder
+	isgomock struct{}
 }
 
 // MockIUserDirectoryMockRecorder is the mock recorder for MockIUserDirectory.
@@ -40,100 +41,100 @@ func (m *MockIUserDirectory) EXPECT() *MockIUserDirectoryMockRecorder {
 }
 
 // AcceptFollower mocks base method.
-func (m *MockIUserDirectory) AcceptFollower(arg0, arg1, arg2, arg3 string) error {
+func (m *MockIUserDirectory) AcceptFollower(followActId, followerUserUrl, followerInbox, followedUser string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AcceptFollower", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "AcceptFollower", followActId, followerUserUrl, followerInbox, followedUser)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AcceptFollower indicates an expected call of AcceptFollower.
-func (mr *MockIUserDirectoryMockRecorder) AcceptFollower(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockIUserDirectoryMockRecorder) AcceptFollower(followActId, followerUserUrl, followerInbox, followedUser any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AcceptFollower", reflect.TypeOf((*MockIUserDirectory)(nil).AcceptFollower), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AcceptFollower", reflect.TypeOf((*MockIUserDirectory)(nil).AcceptFollower), followActId, followerUserUrl, followerInbox, followedUser)
 }
 
 // GetFollowersSummary mocks base method.
-func (m *MockIUserDirectory) GetFollowersSummary(arg0 string) *dto.OrderedListSummary {
+func (m *MockIUserDirectory) GetFollowersSummary(user string) *dto.OrderedListSummary {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFollowersSummary", arg0)
+	ret := m.ctrl.Call(m, "GetFollowersSummary", user)
 	ret0, _ := ret[0].(*dto.OrderedListSummary)
 	return ret0
 }
 
 // GetFollowersSummary indicates an expected call of GetFollowersSummary.
-func (mr *MockIUserDirectoryMockRecorder) GetFollowersSummary(arg0 any) *gomock.Call {
+func (mr *MockIUserDirectoryMockRecorder) GetFollowersSummary(user any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFollowersSummary", reflect.TypeOf((*MockIUserDirectory)(nil).GetFollowersSummary), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFollowersSummary", reflect.TypeOf((*MockIUserDirectory)(nil).GetFollowersSummary), user)
 }
 
 // GetFollowingSummary mocks base method.
-func (m *MockIUserDirectory) GetFollowingSummary(arg0 string) *dto.OrderedListSummary {
+func (m *MockIUserDirectory) GetFollowingSummary(user string) *dto.OrderedListSummary {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFollowingSummary", arg0)
+	ret := m.ctrl.Call(m, "GetFollowingSummary", user)
 	ret0, _ := ret[0].(*dto.OrderedListSummary)
 	return ret0
 }
 
 // GetFollowingSummary indicates an expected call of GetFollowingSummary.
-func (mr *MockIUserDirectoryMockRecorder) GetFollowingSummary(arg0 any) *gomock.Call {
+func (mr *MockIUserDirectoryMockRecorder) GetFollowingSummary(user any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFollowingSummary", reflect.TypeOf((*MockIUserDirectory)(nil).GetFollowingSummary), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFollowingSummary", reflect.TypeOf((*MockIUserDirectory)(nil).GetFollowingSummary), user)
 }
 
 // GetOutboxSummary mocks base method.
-func (m *MockIUserDirectory) GetOutboxSummary(arg0 string) *dto.OrderedListSummary {
+func (m *MockIUserDirectory) GetOutboxSummary(user string) *dto.OrderedListSummary {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOutboxSummary", arg0)
+	ret := m.ctrl.Call(m, "GetOutboxSummary", user)
 	ret0, _ := ret[0].(*dto.OrderedListSummary)
 	return ret0
 }
 
 // GetOutboxSummary indicates an expected call of GetOutboxSummary.
-func (mr *MockIUserDirectoryMockRecorder) GetOutboxSummary(arg0 any) *gomock.Call {
+func (mr *MockIUserDirectoryMockRecorder) GetOutboxSummary(user any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOutboxSummary", reflect.TypeOf((*MockIUserDirectory)(nil).GetOutboxSummary), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOutboxSummary", reflect.TypeOf((*MockIUserDirectory)(nil).GetOutboxSummary), user)
 }
 
 // GetUserInfo mocks base method.
-func (m *MockIUserDirectory) GetUserInfo(arg0 string) *dto.UserInfo {
+func (m *MockIUserDirectory) GetUserInfo(user string) *dto.UserInfo {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserInfo", arg0)
+	ret := m.ctrl.Call(m, "GetUserInfo", user)
 	ret0, _ := ret[0].(*dto.UserInfo)
 	return ret0
 }
 
 // GetUserInfo indicates an expected call of GetUserInfo.
-func (mr *MockIUserDirectoryMockRecorder) GetUserInfo(arg0 any) *gomock.Call {
+func (mr *MockIUserDirectoryMockRecorder) GetUserInfo(user any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserInfo", reflect.TypeOf((*MockIUserDirectory)(nil).GetUserInfo), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserInfo", reflect.TypeOf((*MockIUserDirectory)(nil).GetUserInfo), user)
 }
 
 // GetUserStatus mocks base method.
-func (m *MockIUserDirectory) GetUserStatus(arg0, arg1 string) (*dto.Note, error) {
+func (m *MockIUserDirectory) GetUserStatus(user, statusId string) (*dto.Note, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserStatus", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetUserStatus", user, statusId)
 	ret0, _ := ret[0].(*dto.Note)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUserStatus indicates an expected call of GetUserStatus.
-func (mr *MockIUserDirectoryMockRecorder) GetUserStatus(arg0, arg1 any) *gomock.Call {
+func (mr *MockIUserDirectoryMockRecorder) GetUserStatus(user, statusId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserStatus", reflect.TypeOf((*MockIUserDirectory)(nil).GetUserStatus), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserStatus", reflect.TypeOf((*MockIUserDirectory)(nil).GetUserStatus), user, statusId)
 }
 
 // GetWebfinger mocks base method.
-func (m *MockIUserDirectory) GetWebfinger(arg0 string) *dto.WebfingerResp {
+func (m *MockIUserDirectory) GetWebfinger(user string) *dto.WebfingerResp {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetWebfinger", arg0)
+	ret := m.ctrl.Call(m, "GetWebfinger", user)
 	ret0, _ := ret[0].(*dto.WebfingerResp)
 	return ret0
 }
 
 // GetWebfinger indicates an expected call of GetWebfinger.
-func (mr *MockIUserDirectoryMockRecorder) GetWebfinger(arg0 any) *gomock.Call {
+func (mr *MockIUserDirectoryMockRecorder) GetWebfinger(user any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWebfinger", reflect.TypeOf((*MockIUserDirectory)(nil).GetWebfinger), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWebfinger", reflect.TypeOf((*MockIUserDirectory)(nil).GetWebfinger), user)
 }

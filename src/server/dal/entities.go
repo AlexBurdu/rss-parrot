@@ -63,6 +63,9 @@ type PendingSummary struct {
 	// StatusId is the toot this summary belongs to; it
 	// is the natural key of the row.
 	StatusId string
+	// Title is the article title provided as context to
+	// the summarizer. Cleared on a terminal state.
+	Title string
 	// ArticleText is the already-truncated text handed
 	// to the summarizer. Cleared on a terminal state.
 	ArticleText string

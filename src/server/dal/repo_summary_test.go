@@ -56,6 +56,7 @@ func Test_Repo_PendingSummaryRoundTrip(t *testing.T) {
 	err := repo.AddPendingSummaryIfNew(&PendingSummary{
 		AccountId:    1,
 		StatusId:     statusId,
+		Title:        "Title.",
 		ArticleText:  "Body.",
 		Attempts:     0,
 		NextRetryDue: now.Add(-time.Minute),
@@ -67,6 +68,7 @@ func Test_Repo_PendingSummaryRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, ps)
 	assert.Equal(t, statusId, ps.StatusId)
+	assert.Equal(t, "Title.", ps.Title)
 	assert.Equal(t, "Body.", ps.ArticleText)
 	assert.Equal(t, 0, ps.Attempts)
 	assert.Equal(t, PsPending, ps.State)

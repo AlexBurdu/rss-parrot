@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"rss_parrot/shared"
+	"strings"
 	"time"
 )
 
@@ -15,10 +16,11 @@ import (
 // ISummarizer generates short summaries of article text
 // using a local LLM via the Ollama API.
 type ISummarizer interface {
-	// Summarize returns a 2-4 sentence summary of the
-	// given text. Returns empty string if summarization
+	// Summarize returns a 1-2 sentence summary of the
+	// given article. If title is non-empty, it is included
+	// as context. Returns empty string if summarization
 	// is disabled or fails.
-	Summarize(text string) string
+	Summarize(title, text string) string
 
 	// IsEnabled reports whether summarization is
 	// configured. Summarize returns an empty string
@@ -63,12 +65,23 @@ const (
 	// takes ~30s model load + ~3min inference on a
 	// 2000-char article.
 	ollamaTimeout = 300 * time.Second
-	// Prompt template for summarization.
-	summaryPrompt = "Summarize the following article " +
-		"in 2-4 sentences. Cover the key points. " +
-		"Only output the summary, " +
-		"nothing else.\n\n%s"
+	// Base directive for summarization.
+	summaryDirective = "Write a 1-2 sentence summary of this article " +
+		"focusing on key facts. Be direct and concise. " +
+		"Do not repeat the title, and avoid introductory filler " +
+		"or conversational preambles (such as \"This article discusses\" " +
+		"or \"In this episode\"). Only output the summary, nothing else."
 )
+
+func formatSummaryPrompt(title, text string) string {
+	title = strings.TrimSpace(title)
+	text = strings.TrimSpace(text)
+	if title != "" {
+		return fmt.Sprintf("%s\n\nTitle: %s\n\nArticle:\n%s",
+			summaryDirective, title, text)
+	}
+	return fmt.Sprintf("%s\n\nArticle:\n%s", summaryDirective, text)
+}
 
 func (s *summarizer) IsEnabled() bool {
 	return s.cfg.OllamaUrl != "" && s.cfg.OllamaModel != ""
@@ -81,14 +94,17 @@ func (s *summarizer) TrimForSummary(text string) string {
 	return text
 }
 
-func (s *summarizer) Summarize(text string) string {
+func (s *summarizer) Summarize(title, text string) string {
 	if !s.IsEnabled() {
 		return ""
 	}
 
 	text = s.TrimForSummary(text)
+	if strings.TrimSpace(title) == "" && strings.TrimSpace(text) == "" {
+		return ""
+	}
 
-	prompt := fmt.Sprintf(summaryPrompt, text)
+	prompt := formatSummaryPrompt(title, text)
 	reqBody := ollamaRequest{
 		Model:  s.cfg.OllamaModel,
 		Prompt: prompt,
@@ -137,5 +153,5 @@ func (s *summarizer) Summarize(text string) string {
 		return ""
 	}
 
-	return ollamaResp.Response
+	return strings.TrimSpace(ollamaResp.Response)
 }

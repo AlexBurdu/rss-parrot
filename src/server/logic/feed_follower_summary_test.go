@@ -6,7 +6,6 @@ import (
 	"html"
 	"rss_parrot/dal"
 	"rss_parrot/shared"
-	"strings"
 	"testing"
 	"time"
 )
@@ -58,22 +57,24 @@ type fakeSummarizer struct {
 	result string
 }
 
-func (s *fakeSummarizer) Summarize(text string) string      { return s.result }
-func (s *fakeSummarizer) IsEnabled() bool                   { return true }
-func (s *fakeSummarizer) TrimForSummary(text string) string { return text }
+func (s *fakeSummarizer) Summarize(title, text string) string { return s.result }
+func (s *fakeSummarizer) IsEnabled() bool                     { return true }
+func (s *fakeSummarizer) TrimForSummary(text string) string   { return text }
 
 type fakeRetrier struct {
 	ISummaryRetrier
 	queuedStatusId    string
+	queuedTitle       string
 	queuedArticleText string
 	queueCount        int
 }
 
 func (r *fakeRetrier) QueueForRetry(
-	accountId int, statusId, articleText string, now time.Time,
+	accountId int, statusId, title, articleText string, now time.Time,
 ) {
 	r.queueCount++
 	r.queuedStatusId = statusId
+	r.queuedTitle = title
 	r.queuedArticleText = articleText
 }
 
@@ -131,6 +132,6 @@ func Test_CreateToot_SummaryMissing_QueuesRetryAndStillPosts(t *testing.T) {
 	// ...and the article is queued for a later retry.
 	assert.Equal(t, 1, retrier.queueCount)
 	assert.Equal(t, repo.added.StatusId, retrier.queuedStatusId)
-	assert.True(t,
-		strings.Contains(retrier.queuedArticleText, "full article body"))
+	assert.Equal(t, "The Title", retrier.queuedTitle)
+	assert.Equal(t, "The full article body.", retrier.queuedArticleText)
 }

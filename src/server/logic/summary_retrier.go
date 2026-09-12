@@ -50,7 +50,13 @@ type ISummaryRetrier interface {
 	// again later. A no-op when summarization is
 	// disabled, since a missing summary is then
 	// expected rather than a failure.
-	QueueForRetry(accountId int, statusId, articleText string, now time.Time)
+	QueueForRetry(
+		accountId int,
+		statusId string,
+		title string,
+		articleText string,
+		now time.Time,
+	)
 
 	// RetryNextDue makes at most one retry attempt: it
 	// takes the longest-due pending article, re-runs
@@ -110,7 +116,9 @@ func (sr *summaryRetrier) retryOnceSafely() (didWork bool) {
 
 func (sr *summaryRetrier) QueueForRetry(
 	accountId int,
-	statusId, articleText string,
+	statusId string,
+	title string,
+	articleText string,
 	now time.Time,
 ) {
 	// With no summarizer configured a missing summary
@@ -120,12 +128,13 @@ func (sr *summaryRetrier) QueueForRetry(
 	if !sr.summarizer.IsEnabled() {
 		return
 	}
-	if strings.TrimSpace(articleText) == "" {
+	if strings.TrimSpace(title) == "" && strings.TrimSpace(articleText) == "" {
 		return
 	}
 	ps := dal.PendingSummary{
 		AccountId:    accountId,
 		StatusId:     statusId,
+		Title:        strings.TrimSpace(title),
 		ArticleText:  sr.summarizer.TrimForSummary(articleText),
 		Attempts:     0,
 		NextRetryDue: now.Add(summaryRetryBackoff[0]),
@@ -152,7 +161,7 @@ func (sr *summaryRetrier) RetryNextDue(now time.Time) bool {
 		return false
 	}
 
-	summary := strings.TrimSpace(sr.summarizer.Summarize(ps.ArticleText))
+	summary := strings.TrimSpace(sr.summarizer.Summarize(ps.Title, ps.ArticleText))
 	if summary == "" {
 		return sr.rescheduleOrAbandon(ps, now)
 	}

@@ -54,17 +54,17 @@ func (mr *MockISummarizerMockRecorder) IsEnabled() *gomock.Call {
 }
 
 // Summarize mocks base method.
-func (m *MockISummarizer) Summarize(text string) string {
+func (m *MockISummarizer) Summarize(title, text string) string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Summarize", text)
+	ret := m.ctrl.Call(m, "Summarize", title, text)
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
 // Summarize indicates an expected call of Summarize.
-func (mr *MockISummarizerMockRecorder) Summarize(text any) *gomock.Call {
+func (mr *MockISummarizerMockRecorder) Summarize(title, text any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Summarize", reflect.TypeOf((*MockISummarizer)(nil).Summarize), text)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Summarize", reflect.TypeOf((*MockISummarizer)(nil).Summarize), title, text)
 }
 
 // TrimForSummary mocks base method.

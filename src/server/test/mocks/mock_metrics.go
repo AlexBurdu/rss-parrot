@@ -20,6 +20,7 @@ import (
 type MockIMetrics struct {
 	ctrl     *gomock.Controller
 	recorder *MockIMetricsMockRecorder
+	isgomock struct{}
 }
 
 // MockIMetricsMockRecorder is the mock recorder for MockIMetrics.
@@ -40,51 +41,51 @@ func (m *MockIMetrics) EXPECT() *MockIMetricsMockRecorder {
 }
 
 // CheckableFeedCount mocks base method.
-func (m *MockIMetrics) CheckableFeedCount(arg0 int) {
+func (m *MockIMetrics) CheckableFeedCount(count int) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "CheckableFeedCount", arg0)
+	m.ctrl.Call(m, "CheckableFeedCount", count)
 }
 
 // CheckableFeedCount indicates an expected call of CheckableFeedCount.
-func (mr *MockIMetricsMockRecorder) CheckableFeedCount(arg0 any) *gomock.Call {
+func (mr *MockIMetricsMockRecorder) CheckableFeedCount(count any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckableFeedCount", reflect.TypeOf((*MockIMetrics)(nil).CheckableFeedCount), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckableFeedCount", reflect.TypeOf((*MockIMetrics)(nil).CheckableFeedCount), count)
 }
 
 // CurrentConnections mocks base method.
-func (m *MockIMetrics) CurrentConnections(arg0 int) {
+func (m *MockIMetrics) CurrentConnections(count int) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "CurrentConnections", arg0)
+	m.ctrl.Call(m, "CurrentConnections", count)
 }
 
 // CurrentConnections indicates an expected call of CurrentConnections.
-func (mr *MockIMetricsMockRecorder) CurrentConnections(arg0 any) *gomock.Call {
+func (mr *MockIMetricsMockRecorder) CurrentConnections(count any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentConnections", reflect.TypeOf((*MockIMetrics)(nil).CurrentConnections), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentConnections", reflect.TypeOf((*MockIMetrics)(nil).CurrentConnections), count)
 }
 
 // DbFileSize mocks base method.
-func (m *MockIMetrics) DbFileSize(arg0 int64) {
+func (m *MockIMetrics) DbFileSize(size int64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "DbFileSize", arg0)
+	m.ctrl.Call(m, "DbFileSize", size)
 }
 
 // DbFileSize indicates an expected call of DbFileSize.
-func (mr *MockIMetricsMockRecorder) DbFileSize(arg0 any) *gomock.Call {
+func (mr *MockIMetricsMockRecorder) DbFileSize(size any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DbFileSize", reflect.TypeOf((*MockIMetrics)(nil).DbFileSize), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DbFileSize", reflect.TypeOf((*MockIMetrics)(nil).DbFileSize), size)
 }
 
 // FeedRequested mocks base method.
-func (m *MockIMetrics) FeedRequested(arg0 string) {
+func (m *MockIMetrics) FeedRequested(label string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "FeedRequested", arg0)
+	m.ctrl.Call(m, "FeedRequested", label)
 }
 
 // FeedRequested indicates an expected call of FeedRequested.
-func (mr *MockIMetricsMockRecorder) FeedRequested(arg0 any) *gomock.Call {
+func (mr *MockIMetricsMockRecorder) FeedRequested(label any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FeedRequested", reflect.TypeOf((*MockIMetrics)(nil).FeedRequested), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FeedRequested", reflect.TypeOf((*MockIMetrics)(nil).FeedRequested), label)
 }
 
 // FeedTootSent mocks base method.
@@ -124,15 +125,15 @@ func (mr *MockIMetricsMockRecorder) NewPostSaved() *gomock.Call {
 }
 
 // PostsDeleted mocks base method.
-func (m *MockIMetrics) PostsDeleted(arg0 int) {
+func (m *MockIMetrics) PostsDeleted(count int) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "PostsDeleted", arg0)
+	m.ctrl.Call(m, "PostsDeleted", count)
 }
 
 // PostsDeleted indicates an expected call of PostsDeleted.
-func (mr *MockIMetricsMockRecorder) PostsDeleted(arg0 any) *gomock.Call {
+func (mr *MockIMetricsMockRecorder) PostsDeleted(count any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostsDeleted", reflect.TypeOf((*MockIMetrics)(nil).PostsDeleted), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostsDeleted", reflect.TypeOf((*MockIMetrics)(nil).PostsDeleted), count)
 }
 
 // ServiceStarted mocks base method.
@@ -148,79 +149,79 @@ func (mr *MockIMetricsMockRecorder) ServiceStarted() *gomock.Call {
 }
 
 // StartApubRequestIn mocks base method.
-func (m *MockIMetrics) StartApubRequestIn(arg0 string) logic.IRequestObserver {
+func (m *MockIMetrics) StartApubRequestIn(label string) logic.IRequestObserver {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StartApubRequestIn", arg0)
+	ret := m.ctrl.Call(m, "StartApubRequestIn", label)
 	ret0, _ := ret[0].(logic.IRequestObserver)
 	return ret0
 }
 
 // StartApubRequestIn indicates an expected call of StartApubRequestIn.
-func (mr *MockIMetricsMockRecorder) StartApubRequestIn(arg0 any) *gomock.Call {
+func (mr *MockIMetricsMockRecorder) StartApubRequestIn(label any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartApubRequestIn", reflect.TypeOf((*MockIMetrics)(nil).StartApubRequestIn), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartApubRequestIn", reflect.TypeOf((*MockIMetrics)(nil).StartApubRequestIn), label)
 }
 
 // StartApubRequestOut mocks base method.
-func (m *MockIMetrics) StartApubRequestOut(arg0 string) logic.IRequestObserver {
+func (m *MockIMetrics) StartApubRequestOut(label string) logic.IRequestObserver {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StartApubRequestOut", arg0)
+	ret := m.ctrl.Call(m, "StartApubRequestOut", label)
 	ret0, _ := ret[0].(logic.IRequestObserver)
 	return ret0
 }
 
 // StartApubRequestOut indicates an expected call of StartApubRequestOut.
-func (mr *MockIMetricsMockRecorder) StartApubRequestOut(arg0 any) *gomock.Call {
+func (mr *MockIMetricsMockRecorder) StartApubRequestOut(label any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartApubRequestOut", reflect.TypeOf((*MockIMetrics)(nil).StartApubRequestOut), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartApubRequestOut", reflect.TypeOf((*MockIMetrics)(nil).StartApubRequestOut), label)
 }
 
 // StartWebRequestIn mocks base method.
-func (m *MockIMetrics) StartWebRequestIn(arg0 string) logic.IRequestObserver {
+func (m *MockIMetrics) StartWebRequestIn(label string) logic.IRequestObserver {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StartWebRequestIn", arg0)
+	ret := m.ctrl.Call(m, "StartWebRequestIn", label)
 	ret0, _ := ret[0].(logic.IRequestObserver)
 	return ret0
 }
 
 // StartWebRequestIn indicates an expected call of StartWebRequestIn.
-func (mr *MockIMetricsMockRecorder) StartWebRequestIn(arg0 any) *gomock.Call {
+func (mr *MockIMetricsMockRecorder) StartWebRequestIn(label any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartWebRequestIn", reflect.TypeOf((*MockIMetrics)(nil).StartWebRequestIn), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartWebRequestIn", reflect.TypeOf((*MockIMetrics)(nil).StartWebRequestIn), label)
 }
 
 // TootQueueLength mocks base method.
-func (m *MockIMetrics) TootQueueLength(arg0 int) {
+func (m *MockIMetrics) TootQueueLength(length int) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "TootQueueLength", arg0)
+	m.ctrl.Call(m, "TootQueueLength", length)
 }
 
 // TootQueueLength indicates an expected call of TootQueueLength.
-func (mr *MockIMetricsMockRecorder) TootQueueLength(arg0 any) *gomock.Call {
+func (mr *MockIMetricsMockRecorder) TootQueueLength(length any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TootQueueLength", reflect.TypeOf((*MockIMetrics)(nil).TootQueueLength), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TootQueueLength", reflect.TypeOf((*MockIMetrics)(nil).TootQueueLength), length)
 }
 
 // TotalFollowers mocks base method.
-func (m *MockIMetrics) TotalFollowers(arg0 int) {
+func (m *MockIMetrics) TotalFollowers(count int) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "TotalFollowers", arg0)
+	m.ctrl.Call(m, "TotalFollowers", count)
 }
 
 // TotalFollowers indicates an expected call of TotalFollowers.
-func (mr *MockIMetricsMockRecorder) TotalFollowers(arg0 any) *gomock.Call {
+func (mr *MockIMetricsMockRecorder) TotalFollowers(count any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TotalFollowers", reflect.TypeOf((*MockIMetrics)(nil).TotalFollowers), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TotalFollowers", reflect.TypeOf((*MockIMetrics)(nil).TotalFollowers), count)
 }
 
 // TotalPosts mocks base method.
-func (m *MockIMetrics) TotalPosts(arg0 int) {
+func (m *MockIMetrics) TotalPosts(count int) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "TotalPosts", arg0)
+	m.ctrl.Call(m, "TotalPosts", count)
 }
 
 // TotalPosts indicates an expected call of TotalPosts.
-func (mr *MockIMetricsMockRecorder) TotalPosts(arg0 any) *gomock.Call {
+func (mr *MockIMetricsMockRecorder) TotalPosts(count any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TotalPosts", reflect.TypeOf((*MockIMetrics)(nil).TotalPosts), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TotalPosts", reflect.TypeOf((*MockIMetrics)(nil).TotalPosts), count)
 }
