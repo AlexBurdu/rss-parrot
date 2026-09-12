@@ -47,6 +47,7 @@ func main() {
 			logic.NewKeyStore,
 			logic.NewBlockedFeeds,
 			logic.NewMetrics,
+			logic.NewArticleExtractor,
 			logic.NewSummarizer,
 			logic.NewSummaryRetrier,
 			logic.NewFeedFollower,

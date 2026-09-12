@@ -3,6 +3,7 @@ module rss_parrot
 go 1.24.4
 
 require (
+	codeberg.org/readeck/go-readability/v2 v2.1.2
 	github.com/PuerkitoBio/goquery v1.10.3
 	github.com/charmbracelet/log v0.4.2
 	github.com/go-fed/httpsig v1.1.0
@@ -31,7 +32,10 @@ require (
 	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
+	github.com/go-shiori/dom v0.0.0-20230515143342-73569d674e1c // indirect
+	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
 	github.com/gorilla/css v1.0.1 // indirect
+	github.com/itlightning/dateparse v0.2.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
