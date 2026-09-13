@@ -17,10 +17,12 @@ import (
 // using a local LLM via the Ollama API.
 type ISummarizer interface {
 	// Summarize returns a 1-2 sentence summary of the
-	// given article. If title is non-empty, it is included
-	// as context. Returns empty string if summarization
-	// is disabled or fails.
-	Summarize(title, text string) string
+	// given article in the requested target language.
+	// If title is non-empty, it is included as context.
+	// If lang is empty or unrecognized, it falls back
+	// to content detection, and ultimately to English.
+	// Returns empty string if summarization is disabled or fails.
+	Summarize(title, text, lang string) string
 
 	// IsEnabled reports whether summarization is
 	// configured. Summarize returns an empty string
@@ -65,22 +67,29 @@ const (
 	// takes ~30s model load + ~3min inference on a
 	// 2000-char article.
 	ollamaTimeout = 300 * time.Second
-	// Base directive for summarization.
-	summaryDirective = "Write a 1-2 sentence summary of this article " +
-		"focusing on key facts. Be direct and concise. " +
-		"Do not repeat the title, and avoid introductory filler " +
-		"or conversational preambles (such as \"This article discusses\" " +
-		"or \"In this episode\"). Only output the summary, nothing else."
 )
 
-func formatSummaryPrompt(title, text string) string {
+func formatSummaryPrompt(title, text, lang string) string {
 	title = strings.TrimSpace(title)
 	text = strings.TrimSpace(text)
+	lang = strings.TrimSpace(lang)
+	if lang == "" {
+		lang = DefaultLanguage
+	}
+
+	directive := fmt.Sprintf(
+		"Write a 1-2 sentence summary of this article in %s "+
+			"focusing on key facts. Be direct and concise. "+
+			"Do not repeat the title, and avoid introductory filler "+
+			"or conversational preambles (such as \"This article discusses\" "+
+			"or \"In this episode\"). Only output the summary, nothing else.",
+		lang)
+
 	if title != "" {
 		return fmt.Sprintf("%s\n\nTitle: %s\n\nArticle:\n%s",
-			summaryDirective, title, text)
+			directive, title, text)
 	}
-	return fmt.Sprintf("%s\n\nArticle:\n%s", summaryDirective, text)
+	return fmt.Sprintf("%s\n\nArticle:\n%s", directive, text)
 }
 
 func (s *summarizer) IsEnabled() bool {
@@ -94,7 +103,7 @@ func (s *summarizer) TrimForSummary(text string) string {
 	return text
 }
 
-func (s *summarizer) Summarize(title, text string) string {
+func (s *summarizer) Summarize(title, text, lang string) string {
 	if !s.IsEnabled() {
 		return ""
 	}
@@ -104,7 +113,17 @@ func (s *summarizer) Summarize(title, text string) string {
 		return ""
 	}
 
-	prompt := formatSummaryPrompt(title, text)
+	// Resolve target language: explicit tag normalized first,
+	// then natural language detection on content, falling back to English.
+	targetLang := NormalizeLanguageTag(lang)
+	if targetLang == "" {
+		targetLang = DetectContentLanguage(title + " " + text)
+	}
+	if targetLang == "" {
+		targetLang = DefaultLanguage
+	}
+
+	prompt := formatSummaryPrompt(title, text, targetLang)
 	reqBody := ollamaRequest{
 		Model:  s.cfg.OllamaModel,
 		Prompt: prompt,

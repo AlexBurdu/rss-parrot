@@ -501,7 +501,7 @@ func (ff *feedFollower) updateAccountPosts(
 	keepers, newLastUpdated := getSortedPosts(feed.Items, lastKnownFeedUpdated)
 	for _, k := range keepers {
 		fixPodcastLink(k.itm)
-		if err = ff.storePostIfNew(accountId, accountHandle, k.postTime, k.itm, tootNew); err != nil {
+		if err = ff.storePostIfNew(accountId, accountHandle, feed.Language, k.postTime, k.itm, tootNew); err != nil {
 			return
 		}
 	}
@@ -614,6 +614,7 @@ func stripHtml(htm string) string {
 func (ff *feedFollower) storePostIfNew(
 	accountId int,
 	accountHandle string,
+	feedLang string,
 	postTime time.Time,
 	itm *gofeed.Item,
 	tootNew bool,
@@ -633,49 +634,66 @@ func (ff *feedFollower) storePostIfNew(
 	}
 	if isNew {
 		ff.metrics.NewPostSaved()
-		if err = ff.createToot(accountId, accountHandle, itm, tootNew); err != nil {
+		if err = ff.createToot(accountId, accountHandle, feedLang, itm, tootNew); err != nil {
 			return
 		}
 	}
 	return
 }
 
-// getArticleText assembles the text handed to the
-// summarizer, best source first. The title is passed to
-// the summarizer as its own argument, so it is not
-// prepended here.
+// getArticleTextAndLang assembles the text and detected language
+// handed to the summarizer, best source first. The title is passed to
+// the summarizer as its own argument, so it is not prepended here.
 //
-// A feed that ships the whole article in <content> is
-// already giving us everything. A feed that ships only
-// a teaser is not, and for those the article's own page
-// is worth downloading — a two-line excerpt makes for a
-// summary that says nothing the headline did not.
-// Extraction is best-effort, so the teaser stays the
-// fallback.
-func (ff *feedFollower) getArticleText(
+// A feed that ships the whole article in <content> is already giving us
+// everything. A feed that ships only a teaser is not, and for those the
+// article's own page is worth downloading — a two-line excerpt makes for a
+// summary that says nothing the headline did not. Extraction is best-effort,
+// so the teaser stays the fallback.
+func (ff *feedFollower) getArticleTextAndLang(
 	itm *gofeed.Item,
 	plainDescription string,
-) string {
+	feedLang string,
+) (string, string) {
+	var itemDcLang string
+	if itm.DublinCoreExt != nil && len(itm.DublinCoreExt.Language) > 0 {
+		itemDcLang = itm.DublinCoreExt.Language[0]
+	}
+
 	// Tested after stripping, not before: a <content>
 	// holding only markup — a lone image, a share
 	// widget — is a non-empty field that yields no
 	// text at all, and handing the summarizer an empty
 	// string is worse than going to fetch the page.
 	if content := stripHtml(itm.Content); content != "" {
-		return content
+		lang := DetectArticleLanguage("", itemDcLang, feedLang, itm.Title+" "+content)
+		return content, lang
 	}
+
 	// With no summarizer configured this text is never
 	// read, so downloading a page to build it would be
 	// a request made for nothing.
 	if ff.summarizer.IsEnabled() {
-		if fullText := ff.extractor.Extract(itm.Link); fullText != "" {
-			return fullText
+		if art := ff.extractor.ExtractArticle(itm.Link); art.Text != "" {
+			lang := art.Language
+			if lang == "" || lang == DefaultLanguage {
+				lang = DetectArticleLanguage("", itemDcLang, feedLang, itm.Title+" "+art.Text)
+			}
+			return art.Text, lang
 		}
 	}
-	return plainDescription
+
+	lang := DetectArticleLanguage("", itemDcLang, feedLang, itm.Title+" "+plainDescription)
+	return plainDescription, lang
 }
 
-func (ff *feedFollower) createToot(accountId int, accountHandle string, itm *gofeed.Item, sendToot bool) error {
+func (ff *feedFollower) createToot(
+	accountId int,
+	accountHandle string,
+	feedLang string,
+	itm *gofeed.Item,
+	sendToot bool,
+) error {
 	prettyUrl := itm.Link
 	prettyUrl = strings.TrimPrefix(prettyUrl, "http://")
 	prettyUrl = strings.TrimPrefix(prettyUrl, "https://")
@@ -684,8 +702,8 @@ func (ff *feedFollower) createToot(accountId int, accountHandle string, itm *gof
 	plainDescription := stripHtml(itm.Description)
 	plainDescription = shared.TruncateWithEllipsis(
 		plainDescription, shared.MaxDescriptionLen)
-	articleText := ff.getArticleText(itm, plainDescription)
-	summary := ff.summarizer.Summarize(plainTitle, articleText)
+	articleText, targetLang := ff.getArticleTextAndLang(itm, plainDescription, feedLang)
+	summary := ff.summarizer.Summarize(plainTitle, articleText, targetLang)
 	content := ff.txt.WithVals(
 		"toot_new_post.html", map[string]string{
 			"title":       plainTitle,

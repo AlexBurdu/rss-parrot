@@ -26,7 +26,7 @@ type articleCache struct {
 }
 
 type articleCacheEntry struct {
-	text     string
+	article  ExtractedArticle
 	storedAt time.Time
 }
 
@@ -42,29 +42,30 @@ func newArticleCache(
 }
 
 // get returns the cached extraction result for url and
-// whether there was one. An empty string with ok=true
+// whether there was one. An empty article with ok=true
 // is a remembered failure, and must not be retried.
 func (c *articleCache) get(
 	url string,
 	now time.Time,
-) (text string, ok bool) {
+) (article ExtractedArticle, ok bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	entry, found := c.entries[url]
 	if !found {
-		return "", false
+		return ExtractedArticle{}, false
 	}
 	if now.Sub(entry.storedAt) >= c.ttl {
 		delete(c.entries, url)
-		return "", false
+		return ExtractedArticle{}, false
 	}
-	return entry.text, true
+	return entry.article, true
 }
 
 // put records an extraction result, making room first
 // if the cache is full.
 func (c *articleCache) put(
-	url, text string,
+	url string,
+	article ExtractedArticle,
 	now time.Time,
 ) {
 	c.mu.Lock()
@@ -73,7 +74,7 @@ func (c *articleCache) put(
 		c.makeRoom(now)
 	}
 	c.entries[url] = articleCacheEntry{
-		text:     text,
+		article:  article,
 		storedAt: now,
 	}
 }

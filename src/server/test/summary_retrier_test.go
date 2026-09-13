@@ -119,7 +119,7 @@ func Test_SummaryRetrier_SuccessRewritesTootAndMarksDone(t *testing.T) {
 
 	h.mockRepo.EXPECT().GetPendingSummaryToRetry(retryNow).
 		Return(pendingRow(0), nil)
-	h.mockSummarizer.EXPECT().Summarize(retryTitle, retryArticleText).
+	h.mockSummarizer.EXPECT().Summarize(retryTitle, retryArticleText, "").
 		Return("  Late summary.  ")
 	h.mockRepo.EXPECT().GetToot(retryStatusId).
 		Return(&dal.Toot{StatusId: retryStatusId, Content: retryTootContent}, nil)
@@ -142,7 +142,7 @@ func Test_SummaryRetrier_FailureRescheduleWithLongerBackoff(t *testing.T) {
 
 	h.mockRepo.EXPECT().GetPendingSummaryToRetry(retryNow).
 		Return(pendingRow(0), nil)
-	h.mockSummarizer.EXPECT().Summarize(retryTitle, retryArticleText).Return("")
+	h.mockSummarizer.EXPECT().Summarize(retryTitle, retryArticleText, "").Return("")
 	h.mockRepo.EXPECT().ReschedulePendingSummary(
 		retryStatusId, 1, retryNow.Add(60*time.Minute)).Return(nil)
 
@@ -158,7 +158,7 @@ func Test_SummaryRetrier_AbandonsAfterRetryCap(t *testing.T) {
 	// which exhausts the cap.
 	h.mockRepo.EXPECT().GetPendingSummaryToRetry(retryNow).
 		Return(pendingRow(2), nil)
-	h.mockSummarizer.EXPECT().Summarize(retryTitle, retryArticleText).Return("")
+	h.mockSummarizer.EXPECT().Summarize(retryTitle, retryArticleText, "").Return("")
 	h.mockRepo.EXPECT().FinishPendingSummary(
 		retryStatusId, dal.PsAbandoned).Return(nil)
 
@@ -172,7 +172,7 @@ func Test_SummaryRetrier_AbandonsWhenTootIsGone(t *testing.T) {
 
 	h.mockRepo.EXPECT().GetPendingSummaryToRetry(retryNow).
 		Return(pendingRow(0), nil)
-	h.mockSummarizer.EXPECT().Summarize(retryTitle, retryArticleText).
+	h.mockSummarizer.EXPECT().Summarize(retryTitle, retryArticleText, "").
 		Return("Late summary.")
 	h.mockRepo.EXPECT().GetToot(retryStatusId).Return(nil, nil)
 	h.mockRepo.EXPECT().FinishPendingSummary(
@@ -199,7 +199,7 @@ func Test_SummaryRetrier_ReportsNoProgressWhenRescheduleFails(t *testing.T) {
 
 	h.mockRepo.EXPECT().GetPendingSummaryToRetry(retryNow).
 		Return(pendingRow(0), nil)
-	h.mockSummarizer.EXPECT().Summarize(retryTitle, retryArticleText).Return("")
+	h.mockSummarizer.EXPECT().Summarize(retryTitle, retryArticleText, "").Return("")
 	h.mockRepo.EXPECT().ReschedulePendingSummary(
 		retryStatusId, 1, retryNow.Add(60*time.Minute)).
 		Return(errors.New("db is busy"))
@@ -216,7 +216,7 @@ func Test_SummaryRetrier_StoreFailureSchedulesAnotherAttempt(t *testing.T) {
 
 	h.mockRepo.EXPECT().GetPendingSummaryToRetry(retryNow).
 		Return(pendingRow(0), nil)
-	h.mockSummarizer.EXPECT().Summarize(retryTitle, retryArticleText).
+	h.mockSummarizer.EXPECT().Summarize(retryTitle, retryArticleText, "").
 		Return("Late summary.")
 	h.mockRepo.EXPECT().GetToot(retryStatusId).
 		Return(&dal.Toot{StatusId: retryStatusId, Content: retryTootContent}, nil)

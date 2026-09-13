@@ -11,6 +11,7 @@ package mocks
 
 import (
 	reflect "reflect"
+	logic "rss_parrot/logic"
 
 	gomock "go.uber.org/mock/gomock"
 )
@@ -51,4 +52,18 @@ func (m *MockIArticleExtractor) Extract(articleUrl string) string {
 func (mr *MockIArticleExtractorMockRecorder) Extract(articleUrl any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Extract", reflect.TypeOf((*MockIArticleExtractor)(nil).Extract), articleUrl)
+}
+
+// ExtractArticle mocks base method.
+func (m *MockIArticleExtractor) ExtractArticle(articleUrl string) logic.ExtractedArticle {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExtractArticle", articleUrl)
+	ret0, _ := ret[0].(logic.ExtractedArticle)
+	return ret0
+}
+
+// ExtractArticle indicates an expected call of ExtractArticle.
+func (mr *MockIArticleExtractorMockRecorder) ExtractArticle(articleUrl any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtractArticle", reflect.TypeOf((*MockIArticleExtractor)(nil).ExtractArticle), articleUrl)
 }

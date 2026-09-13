@@ -17,6 +17,13 @@ import (
 
 //go:generate mockgen --build_flags=--mod=mod -destination ../test/mocks/mock_article_extractor.go -package mocks rss_parrot/logic IArticleExtractor
 
+// ExtractedArticle represents the extracted body text and
+// detected language of an article webpage.
+type ExtractedArticle struct {
+	Text     string
+	Language string
+}
+
 // IArticleExtractor pulls an article's own body text
 // off the page it lives on.
 //
@@ -31,6 +38,11 @@ type IArticleExtractor interface {
 	// any reason. Callers fall back to whatever the
 	// feed itself gave them.
 	Extract(articleUrl string) string
+
+	// ExtractArticle returns the plain-text body and detected
+	// language of the article at articleUrl. Returns an empty
+	// ExtractedArticle when extraction is disabled or fails.
+	ExtractArticle(articleUrl string) ExtractedArticle
 }
 
 const (
@@ -114,28 +126,32 @@ func newArticleExtractor(
 }
 
 func (ae *articleExtractor) Extract(articleUrl string) string {
+	return ae.ExtractArticle(articleUrl).Text
+}
+
+func (ae *articleExtractor) ExtractArticle(articleUrl string) ExtractedArticle {
 
 	if !ae.cfg.ExtractFullText {
-		return ""
+		return ExtractedArticle{}
 	}
 	parsed, err := parsePublicPageUrl(articleUrl)
 	if err != nil {
 		ae.logger.Infof(
 			"Extractor: not fetching %s: %v",
 			articleUrl, err)
-		return ""
+		return ExtractedArticle{}
 	}
 
 	// A remembered failure counts as a hit: the point
 	// of caching it is not to ask the site again.
-	if text, ok := ae.cache.get(articleUrl, time.Now()); ok {
-		return text
+	if art, ok := ae.cache.get(articleUrl, time.Now()); ok {
+		return art
 	}
 
 	ae.waitForTurn(parsed.Host)
-	text := ae.fetchAndExtract(articleUrl, parsed)
-	ae.cache.put(articleUrl, text, time.Now())
-	return text
+	art := ae.fetchAndExtract(articleUrl, parsed)
+	ae.cache.put(articleUrl, art, time.Now())
+	return art
 }
 
 // waitForTurn blocks until this host's next throttle
@@ -150,31 +166,31 @@ func (ae *articleExtractor) waitForTurn(host string) {
 func (ae *articleExtractor) fetchAndExtract(
 	articleUrl string,
 	parsed *url.URL,
-) string {
+) ExtractedArticle {
 
-	body, err := ae.fetchPage(articleUrl)
+	page, err := ae.fetchPage(articleUrl)
 	if err != nil {
 		ae.logger.Infof(
 			"Extractor: %s not extracted: %v",
 			articleUrl, err)
-		return ""
+		return ExtractedArticle{}
 	}
-	defer body.Close()
+	defer page.body.Close()
 
 	article, err := readability.FromReader(
-		io.LimitReader(body, maxArticleBytes), parsed)
+		io.LimitReader(page.body, maxArticleBytes), parsed)
 	if err != nil {
 		ae.logger.Infof(
 			"Extractor: %s not readable: %v",
 			articleUrl, err)
-		return ""
+		return ExtractedArticle{}
 	}
 	var sb strings.Builder
 	if err = article.RenderText(&sb); err != nil {
 		ae.logger.Infof(
 			"Extractor: %s render failed: %v",
 			articleUrl, err)
-		return ""
+		return ExtractedArticle{}
 	}
 
 	text := strings.TrimSpace(sb.String())
@@ -182,9 +198,18 @@ func (ae *articleExtractor) fetchAndExtract(
 		ae.logger.Infof(
 			"Extractor: %s yielded only %d chars; ignoring",
 			articleUrl, len(text))
-		return ""
+		return ExtractedArticle{}
 	}
-	return truncateRunes(text, maxExtractedLen)
+	trimmedText := truncateRunes(text, maxExtractedLen)
+
+	// Detect article language from HTML lang, HTTP header, or content.
+	lang := DetectArticleLanguage(
+		page.contentLang, article.Language(), "", trimmedText)
+
+	return ExtractedArticle{
+		Text:     trimmedText,
+		Language: lang,
+	}
 }
 
 // truncateRunes cuts text to at most maxLen bytes
@@ -200,13 +225,18 @@ func truncateRunes(text string, maxLen int) string {
 	return text[:cut]
 }
 
+type fetchedPage struct {
+	body        io.ReadCloser
+	contentLang string
+}
+
 // fetchPage GETs an article page and hands back its
 // body for the caller to close. It refuses anything
 // that is not HTML, so a feed linking to a PDF or a
 // video does not get parsed as a document.
 func (ae *articleExtractor) fetchPage(
 	articleUrl string,
-) (io.ReadCloser, error) {
+) (*fetchedPage, error) {
 
 	req, err := http.NewRequest("GET", articleUrl, nil)
 	if err != nil {
@@ -230,7 +260,10 @@ func (ae *articleExtractor) fetchPage(
 		return nil, fmt.Errorf(
 			"content type is %q, not HTML", ct)
 	}
-	return resp.Body, nil
+	return &fetchedPage{
+		body:        resp.Body,
+		contentLang: resp.Header.Get("Content-Language"),
+	}, nil
 }
 
 func isHtmlContentType(contentType string) bool {

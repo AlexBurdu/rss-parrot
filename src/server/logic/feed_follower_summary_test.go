@@ -1,13 +1,14 @@
 package logic
 
 import (
-	"github.com/mmcdole/gofeed"
-	"github.com/stretchr/testify/assert"
 	"html"
 	"rss_parrot/dal"
 	"rss_parrot/shared"
 	"testing"
 	"time"
+
+	"github.com/mmcdole/gofeed"
+	"github.com/stretchr/testify/assert"
 )
 
 // The fakes below embed the interface they stand for,
@@ -60,10 +61,12 @@ type fakeSummarizer struct {
 	// which is how the article-text tests below see
 	// which source won.
 	lastText string
+	lastLang string
 }
 
-func (s *fakeSummarizer) Summarize(title, text string) string {
+func (s *fakeSummarizer) Summarize(title, text, lang string) string {
 	s.lastText = text
+	s.lastLang = lang
 	return s.result
 }
 
@@ -72,14 +75,22 @@ func (s *fakeSummarizer) TrimForSummary(text string) string { return text }
 
 type fakeExtractor struct {
 	result    string
+	lang      string
 	askedFor  string
 	callCount int
 }
 
 func (e *fakeExtractor) Extract(articleUrl string) string {
+	return e.ExtractArticle(articleUrl).Text
+}
+
+func (e *fakeExtractor) ExtractArticle(articleUrl string) ExtractedArticle {
 	e.callCount++
 	e.askedFor = articleUrl
-	return e.result
+	return ExtractedArticle{
+		Text:     e.result,
+		Language: e.lang,
+	}
 }
 
 type fakeRetrier struct {
@@ -143,7 +154,7 @@ func Test_CreateToot_SummaryPresent_NothingQueued(t *testing.T) {
 
 	ff, f := setupCreateTootTest("A summary.")
 
-	err := ff.createToot(7, "x.test", tootTestItem(), true)
+	err := ff.createToot(7, "x.test", "", tootTestItem(), true)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, f.repo.added)
@@ -156,7 +167,7 @@ func Test_CreateToot_SummaryMissing_QueuesRetryAndStillPosts(t *testing.T) {
 
 	ff, f := setupCreateTootTest("")
 
-	err := ff.createToot(7, "x.test", tootTestItem(), true)
+	err := ff.createToot(7, "x.test", "", tootTestItem(), true)
 
 	assert.NoError(t, err)
 	// The toot goes out right away, without a summary.
@@ -175,7 +186,7 @@ func Test_CreateToot_FeedWithContent_IsNotDownloaded(t *testing.T) {
 	ff, f := setupCreateTootTest("A summary.")
 	f.extractor.result = "Extracted body text."
 
-	err := ff.createToot(7, "x.test", tootTestItem(), true)
+	err := ff.createToot(7, "x.test", "", tootTestItem(), true)
 
 	assert.NoError(t, err)
 	// The feed already carries the whole article, so
@@ -191,7 +202,7 @@ func Test_CreateToot_ExcerptOnlyFeed_SummarizesExtractedText(t *testing.T) {
 	itm := tootTestItem()
 	itm.Content = ""
 
-	err := ff.createToot(7, "x.test", itm, true)
+	err := ff.createToot(7, "x.test", "", itm, true)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, f.extractor.callCount)
@@ -207,7 +218,7 @@ func Test_CreateToot_ExtractionFails_FallsBackToDescription(t *testing.T) {
 	itm := tootTestItem()
 	itm.Content = ""
 
-	err := ff.createToot(7, "x.test", itm, true)
+	err := ff.createToot(7, "x.test", "", itm, true)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, f.extractor.callCount)
@@ -225,7 +236,7 @@ func Test_CreateToot_SummariesOff_NothingIsDownloaded(t *testing.T) {
 	itm := tootTestItem()
 	itm.Content = ""
 
-	err := ff.createToot(7, "x.test", itm, true)
+	err := ff.createToot(7, "x.test", "", itm, true)
 
 	assert.NoError(t, err)
 	// Nobody would read the extracted text, so the
@@ -243,9 +254,43 @@ func Test_CreateToot_MarkupOnlyContent_FallsThroughToExtraction(t *testing.T) {
 	// summarizer would otherwise be handed nothing.
 	itm.Content = `<p><img src="hero.jpg"></p>`
 
-	err := ff.createToot(7, "x.test", itm, true)
+	err := ff.createToot(7, "x.test", "", itm, true)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, f.extractor.callCount)
 	assert.Equal(t, "Extracted body text.", f.summarizer.lastText)
+}
+
+func Test_CreateToot_MultiLanguage_FeedLanguagePassed(t *testing.T) {
+	ff, f := setupCreateTootTest("Resumen.")
+
+	err := ff.createToot(7, "x.test", "es", tootTestItem(), true)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "Spanish", f.summarizer.lastLang)
+}
+
+func Test_CreateToot_MultiLanguage_ExtractedLanguagePassed(t *testing.T) {
+	ff, f := setupCreateTootTest("Résumé.")
+	f.extractor.result = "Corps de texte complet de l'article."
+	f.extractor.lang = "French"
+	itm := tootTestItem()
+	itm.Content = ""
+
+	err := ff.createToot(7, "x.test", "", itm, true)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "French", f.summarizer.lastLang)
+}
+
+func Test_CreateToot_MultiLanguage_ContentDetectionUsed(t *testing.T) {
+	ff, f := setupCreateTootTest("Rezumat.")
+	itm := tootTestItem()
+	itm.Title = "Tehnologie și inteligență artificială"
+	itm.Content = "Acesta este un articol detaliat despre programare și baze de date scrise în limba română."
+
+	err := ff.createToot(7, "x.test", "", itm, true)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "Romanian", f.summarizer.lastLang)
 }
