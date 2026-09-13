@@ -13,27 +13,28 @@ func Test_ArticleCache_ForgetsExpiredEntries(t *testing.T) {
 
 	c := newArticleCache(time.Hour, 4)
 	t0 := time.Now()
-	c.put("https://x.test/a", "body", t0)
+	c.put("https://x.test/a", ExtractedArticle{Text: "body", Language: "English"}, t0)
 
-	text, ok := c.get("https://x.test/a", t0.Add(59*time.Minute))
+	art, ok := c.get("https://x.test/a", t0.Add(59*time.Minute))
 	assert.True(t, ok)
-	assert.Equal(t, "body", text)
+	assert.Equal(t, "body", art.Text)
+	assert.Equal(t, "English", art.Language)
 
 	_, ok = c.get("https://x.test/a", t0.Add(time.Hour))
 	assert.False(t, ok)
 }
 
-// An empty string is a remembered failure, and must
+// An empty article is a remembered failure, and must
 // read back as a hit so the caller does not re-fetch.
 func Test_ArticleCache_RemembersFailures(t *testing.T) {
 
 	c := newArticleCache(time.Hour, 4)
 	t0 := time.Now()
-	c.put("https://x.test/a", "", t0)
+	c.put("https://x.test/a", ExtractedArticle{}, t0)
 
-	text, ok := c.get("https://x.test/a", t0)
+	art, ok := c.get("https://x.test/a", t0)
 	assert.True(t, ok)
-	assert.Equal(t, "", text)
+	assert.Equal(t, "", art.Text)
 }
 
 func Test_ArticleCache_StaysWithinItsSizeLimit(t *testing.T) {
@@ -43,7 +44,7 @@ func Test_ArticleCache_StaysWithinItsSizeLimit(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		c.put(
 			fmt.Sprintf("https://x.test/%d", i),
-			"body",
+			ExtractedArticle{Text: "body"},
 			t0.Add(time.Duration(i)*time.Second))
 	}
 
@@ -61,14 +62,14 @@ func Test_ArticleCache_RefreshDoesNotEvict(t *testing.T) {
 
 	c := newArticleCache(time.Hour, 2)
 	t0 := time.Now()
-	c.put("https://x.test/a", "one", t0)
-	c.put("https://x.test/b", "two", t0)
-	c.put("https://x.test/a", "one again", t0)
+	c.put("https://x.test/a", ExtractedArticle{Text: "one"}, t0)
+	c.put("https://x.test/b", ExtractedArticle{Text: "two"}, t0)
+	c.put("https://x.test/a", ExtractedArticle{Text: "one again"}, t0)
 
 	assert.Equal(t, 2, len(c.entries))
-	text, ok := c.get("https://x.test/b", t0)
+	art, ok := c.get("https://x.test/b", t0)
 	assert.True(t, ok)
-	assert.Equal(t, "two", text)
+	assert.Equal(t, "two", art.Text)
 }
 
 // The cache is reached from the feed check loop and
@@ -87,7 +88,7 @@ func Test_ArticleCache_ConcurrentUseIsSafe(t *testing.T) {
 			// contend on the same entries.
 			url := fmt.Sprintf("https://x.test/%d", n%8)
 			for j := 0; j < 50; j++ {
-				c.put(url, "body", t0)
+				c.put(url, ExtractedArticle{Text: "body"}, t0)
 				c.get(url, t0)
 			}
 		}(i)

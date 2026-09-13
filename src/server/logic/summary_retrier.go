@@ -161,7 +161,7 @@ func (sr *summaryRetrier) RetryNextDue(now time.Time) bool {
 		return false
 	}
 
-	summary := strings.TrimSpace(sr.summarizer.Summarize(ps.Title, ps.ArticleText))
+	summary := strings.TrimSpace(sr.summarizer.Summarize(ps.Title, ps.ArticleText, ""))
 	if summary == "" {
 		return sr.rescheduleOrAbandon(ps, now)
 	}

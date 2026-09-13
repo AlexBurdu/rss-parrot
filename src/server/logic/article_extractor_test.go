@@ -222,3 +222,92 @@ func Test_Extractor_CutsVeryLongArticle(t *testing.T) {
 	assert.Greater(t, len(text), maxExtractedLen-8)
 	assert.True(t, utf8.ValidString(text))
 }
+
+func Test_Extractor_DetectsHtmlLang(t *testing.T) {
+	page := `<html lang="es"><head><title>Título</title></head>` +
+		`<body><article><h1>Título</h1><p>` + articleBody +
+		`</p><p>` + articleBody + `</p></article></body></html>`
+
+	ts, _ := countingArticleServer(t,
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/html")
+			fmt.Fprint(w, page)
+		})
+	ae := newTestExtractor(true)
+
+	art := ae.ExtractArticle(ts.URL + "/spanish")
+	assert.NotEmpty(t, art.Text)
+	assert.Equal(t, "Spanish", art.Language)
+}
+
+func Test_Extractor_DetectsHttpContentLanguage(t *testing.T) {
+	ts, _ := countingArticleServer(t,
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/html")
+			w.Header().Set("Content-Language", "ro-RO")
+			fmt.Fprint(w, articlePage(articleBody))
+		})
+	ae := newTestExtractor(true)
+
+	art := ae.ExtractArticle(ts.URL + "/romanian")
+	assert.NotEmpty(t, art.Text)
+	assert.Equal(t, "Romanian", art.Language)
+}
+
+func Test_Extractor_HtmlLangBeatsHttpHeader(t *testing.T) {
+	page := `<html lang="es"><head><title>Título</title></head>` +
+		`<body><article><h1>Título</h1><p>` + articleBody +
+		`</p><p>` + articleBody + `</p></article></body></html>`
+
+	ts, _ := countingArticleServer(t,
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/html")
+			w.Header().Set("Content-Language", "fr")
+			fmt.Fprint(w, page)
+		})
+	ae := newTestExtractor(true)
+
+	art := ae.ExtractArticle(ts.URL + "/spanish-beats-french")
+	assert.Equal(t, "Spanish", art.Language)
+}
+
+func Test_Extractor_DetectsContentLanguageFallback(t *testing.T) {
+	germanBody := "Dies ist ein ausführlicher deutscher Artikel über " +
+		"Softwareentwicklung, Cloud-Systeme und verteilte Datenbanken in Europa. " +
+		"Der Text enthält genügend Wörter und Struktur für eine verlässliche " +
+		"automatische Erkennung der natürlichen Sprache durch den Algorithmus."
+
+	ts, _ := countingArticleServer(t,
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/html")
+			fmt.Fprint(w, articlePage(germanBody))
+		})
+	ae := newTestExtractor(true)
+
+	art := ae.ExtractArticle(ts.URL + "/german")
+	assert.NotEmpty(t, art.Text)
+	assert.Equal(t, "German", art.Language)
+}
+
+func Test_Extractor_CachesLanguageWithText(t *testing.T) {
+	page := `<html lang="fr"><head><title>Titre</title></head>` +
+		`<body><article><h1>Titre</h1><p>` + articleBody +
+		`</p><p>` + articleBody + `</p></article></body></html>`
+
+	ts, hits := countingArticleServer(t,
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/html")
+			fmt.Fprint(w, page)
+		})
+	ae := newTestExtractor(true)
+
+	art1 := ae.ExtractArticle(ts.URL + "/french")
+	assert.Equal(t, "French", art1.Language)
+	assert.Equal(t, int32(1), hits.Load())
+
+	// Second fetch must hit cache and preserve language
+	art2 := ae.ExtractArticle(ts.URL + "/french")
+	assert.Equal(t, art1.Text, art2.Text)
+	assert.Equal(t, "French", art2.Language)
+	assert.Equal(t, int32(1), hits.Load())
+}
